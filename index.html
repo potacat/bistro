@@ -3,25 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Family Menu</title>
+    <title>Family Menu V2 (Secure Relational)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              cream: "#fffaf2",
-              oat: "#f4eadc",
-              clay: "#c97944",
-              cedar: "#7b4b2a",
-              ink: "#2f2924",
+              cream: "#fffaf2", oat: "#f4eadc", clay: "#c97944", cedar: "#7b4b2a", ink: "#2f2924",
             },
-            boxShadow: {
-              soft: "0 20px 60px rgba(91, 60, 34, 0.10)",
-            },
+            boxShadow: { soft: "0 20px 60px rgba(91, 60, 34, 0.10)" },
           },
         },
       };
@@ -32,14 +29,12 @@
           radial-gradient(circle at top left, rgba(238, 166, 94, 0.18), transparent 34rem),
           linear-gradient(135deg, #fffaf2 0%, #f8efe4 50%, #fffdf8 100%);
       }
-
       .wood-grain {
         background:
           linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.34)),
           repeating-linear-gradient(105deg, rgba(201, 121, 68, 0.10) 0 1px, transparent 1px 12px),
           #f8efe4;
       }
-
       .dish-art {
         background:
           radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0 30%, transparent 31%),
@@ -52,372 +47,65 @@
   </head>
   <body class="min-h-screen text-ink antialiased">
     <div id="root">
-      <div style="max-width: 720px; margin: 48px auto; padding: 24px; border-radius: 8px; background: rgba(255,255,255,.72); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #2f2924;">
-        <h1 style="font-size: 32px; margin: 0 0 12px;">Family Menu</h1>
-        <p style="line-height: 1.6; margin: 0;">Loading the menu app...</p>
+      <div style="max-width: 720px; margin: 48px auto; padding: 24px; border-radius: 8px; background: rgba(255,255,255,.72); font-family: sans-serif; color: #2f2924;">
+        <h1 style="font-size: 32px; margin: 0 0 12px;">Connecting to Cloud...</h1>
+        <p style="line-height: 1.6; margin: 0;">Initializing secure digital castle...</p>
       </div>
     </div>
 
     <script>
       (function () {
-        if (!window.React || !window.ReactDOM) {
-          document.getElementById("root").innerHTML =
-            '<div style="max-width:720px;margin:48px auto;padding:24px;border-radius:8px;background:rgba(255,255,255,.82);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#2f2924;"><h1 style="font-size:32px;margin:0 0 12px;">Family Menu</h1><p style="line-height:1.6;margin:0;">React did not load from the CDN. Please check your network connection and refresh this file.</p></div>';
-          return;
-        }
-
         const h = React.createElement;
         const { useEffect, useMemo, useState } = React;
-        const DISH_STORAGE_KEY = "family-menu-custom-dishes-v3";
-        const OLD_DISH_STORAGE_KEY = "family-menu-custom-dishes-v2";
-        const INVENTORY_STORAGE_KEY = "family-menu-inventory-v1";
+
+        // =========================================================
+        // 🔴 关键配置区：请在这里填入你的 Supabase URL 和 Key 🔴
+        // =========================================================
+        const SUPABASE_URL = 'https://fawxcdheypnfnlxzcwrl.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_0ymWg7r2cAB-A0fQ7Hm4lQ_tV0Mcx1_';
+        const FAMILY_EMAIL = 'ourhome@menu.com'; // 自动关联你之前创建的虚拟家庭邮箱
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const aliases = {
-          "spring onion": "Scallion",
-          scallions: "Scallion",
-          scallion: "Scallion",
-          "green onion": "Scallion",
-          "green onions": "Scallion",
-          "小葱": "Scallion",
-          "青葱": "Scallion",
-          "葱": "Scallion",
-          "garlic clove": "Garlic",
-          garlic: "Garlic",
-          "蒜": "Garlic",
-          "大蒜": "Garlic",
-          ginger: "Ginger",
-          "姜": "Ginger",
-          oil: "Oil",
-          "cooking oil": "Oil",
-          salt: "Salt",
-          "table salt": "Salt",
-          tomato: "Tomato",
-          tomatoes: "Tomato",
-          "番茄": "Tomato",
-          "西红柿": "Tomato",
-          egg: "Egg",
-          eggs: "Egg",
-          "鸡蛋": "Egg",
-          "green pepper": "Green Pepper",
-          "bell pepper": "Green Pepper",
-          pepper: "Green Pepper",
-          "青椒": "Green Pepper",
-          "pork loin": "Pork Loin",
-          pork: "Pork Loin",
-          "里脊肉": "Pork Loin",
-          tofu: "Tofu",
-          "豆腐": "Tofu",
-          "hou zhu sauce": "Hou Zhu Sauce",
-          "houzhu sauce": "Hou Zhu Sauce",
-          "侯柱酱": "Hou Zhu Sauce",
-        };
-
-        const calorieLookup = {
-          egg: { pcs: 72, g: 1.43 },
-          tomato: { pcs: 22, g: 0.18 },
-          scallion: { stalk: 5, g: 0.32 },
-          garlic: { clove: 4, g: 1.49 },
-          ginger: { g: 0.8 },
-          "green pepper": { pcs: 24, g: 0.26 },
-          "pork loin": { g: 1.43 },
-          tofu: { g: 0.76 },
-          "hou zhu sauce": { tbsp: 35, tsp: 12, g: 1.7 },
-          oil: { tbsp: 120, tsp: 40, g: 8.84 },
-          salt: { tsp: 0, g: 0 },
+          "spring onion": "Scallion", scallions: "Scallion", scallion: "Scallion", "green onion": "Scallion", "green onions": "Scallion", "小葱": "Scallion", "青葱": "Scallion", "葱": "Scallion",
+          "garlic clove": "Garlic", garlic: "Garlic", "蒜": "Garlic", "大蒜": "Garlic", ginger: "Ginger", "姜": "Ginger", oil: "Oil", "cooking oil": "Oil", salt: "Salt", "table salt": "Salt",
+          tomato: "Tomato", tomatoes: "Tomato", "番茄": "Tomato", "西红柿": "Tomato", egg: "Egg", eggs: "Egg", "鸡蛋": "Egg", "green pepper": "Green Pepper", "bell pepper": "Green Pepper",
+          pepper: "Green Pepper", "青椒": "Green Pepper", "pork loin": "Pork Loin", pork: "Pork Loin", "里脊肉": "Pork Loin", tofu: "Tofu", "豆腐": "Tofu", "hou zhu sauce": "Hou Zhu Sauce",
+          "houzhu sauce": "Hou Zhu Sauce", "侯柱酱": "Hou Zhu Sauce",
         };
 
         const baseDishes = [
-          {
-            id: 1,
-            name: "Tomato Egg Stir-Fry",
-            subtitle: "Soft eggs and bright tomato with a scallion finish",
-            time: "12 min",
-            calories: 305,
-            source: "Calories use common USDA FoodData Central ingredient values.",
-            tags: ["Chinese", "Dinner", "Quick"],
-            accent: ["#e85038", "#ffd36f", "#4f9b67"],
-            mainIngredients: [
-              ingredient("Tomato", 2, "pcs"),
-              ingredient("Egg", 3, "pcs"),
-            ],
-            pantryIngredients: [
-              ingredient("Scallion", 1, "stalk"),
-              ingredient("Oil", 1, "tsp"),
-              ingredient("Salt", 0.25, "tsp"),
-            ],
-            preparation: [
-              "Cut tomatoes into wedges and slice the scallion.",
-              "Beat the eggs with a small pinch of salt until smooth.",
-            ],
-            cooking: [
-              "Scramble the eggs in a hot pan until barely set, then transfer them out.",
-              "Cook tomato wedges until they soften and release their juice.",
-              "Return the eggs to the pan, fold gently, and finish with scallion.",
-            ],
-          },
-          {
-            id: 2,
-            name: "Pepper Pork Strips",
-            subtitle: "Green pepper with tender pork loin",
-            time: "18 min",
-            calories: 450,
-            source: "Calories use common USDA FoodData Central ingredient values.",
-            tags: ["Chinese", "Dinner", "Pork"],
-            accent: ["#4f9b67", "#b66a4b", "#e7c07b"],
-            mainIngredients: [
-              ingredient("Green Pepper", 2, "pcs"),
-              ingredient("Pork Loin", 250, "g"),
-            ],
-            pantryIngredients: [
-              ingredient("Scallion", 1, "stalk"),
-              ingredient("Garlic", 1, "clove"),
-              ingredient("Oil", 1, "tsp"),
-              ingredient("Salt", 0.25, "tsp"),
-            ],
-            preparation: [
-              "Slice pork loin into thin strips and cut green peppers into matchsticks.",
-              "Season pork lightly with salt and a little starch if available.",
-            ],
-            cooking: [
-              "Sear the pork quickly over high heat, then set it aside.",
-              "Stir-fry green pepper strips until crisp-tender.",
-              "Return pork to the pan, toss with scallion and garlic, and season to taste.",
-            ],
-          },
+          { id: 1, name: "Tomato Egg Stir-Fry", subtitle: "Soft eggs and bright tomato with a scallion finish", time: "12 min", calories: 305, source: "Calories use dynamic cloud nutrition values.", tags: ["Chinese", "Dinner", "Quick"], accent: ["#e85038", "#ffd36f", "#4f9b67"], mainIngredients: [{name: "Tomato", qty: 2, unit: "pcs", role:"main"}, {name: "Egg", qty: 3, unit: "pcs", role:"main"}], pantryIngredients: [{name: "Scallion", qty: 1, unit: "stalk", role:"pantry"}, {name: "Oil", qty: 1, unit: "tsp", role:"pantry"}, {name: "Salt", qty: 0.25, unit: "tsp", role:"pantry"}], preparation: ["Cut tomatoes into wedges and slice the scallion.", "Beat the eggs with a small pinch of salt until smooth."], cooking: ["Scramble the eggs in a hot pan until barely set.", "Cook tomato wedges until they release juice.", "Return eggs, fold gently, and finish with scallion."] },
+          { id: 2, name: "Pepper Pork Strips", subtitle: "Green pepper with tender pork loin", time: "18 min", calories: 450, source: "Calories use dynamic cloud nutrition values.", tags: ["Chinese", "Dinner", "Pork"], accent: ["#4f9b67", "#b66a4b", "#e7c07b"], mainIngredients: [{name: "Green Pepper", qty: 2, unit: "pcs", role:"main"}, {name: "Pork Loin", qty: 250, unit: "g", role:"main"}], pantryIngredients: [{name: "Scallion", qty: 1, unit: "stalk", role:"pantry"}, {name: "Garlic", qty: 1, unit: "clove", role:"pantry"}, {name: "Oil", qty: 1, unit: "tsp", role:"pantry"}, {name: "Salt", qty: 0.25, unit: "tsp", role:"pantry"}], preparation: ["Slice pork loin into thin strips and cut green peppers.", "Season pork lightly with salt."], cooking: ["Sear the pork quickly over high heat, set aside.", "Stir-fry green pepper strips until crisp-tender.", "Return pork, toss with scallion and garlic."] }
         ];
 
-        const defaultInventory = [
-          ingredient("Egg", 1, "pcs"),
-          ingredient("Scallion", 1, "stalk"),
-          ingredient("Oil", 20, "tsp"),
-          ingredient("Salt", 20, "tsp"),
-          ingredient("Garlic", 3, "clove"),
-        ];
+        const emptyForm = { name: "", tags: "Chinese, Dinner", mainIngredients: "Tofu, 300, g\nHou Zhu Sauce, 1, tbsp", pantryIngredients: "Scallion, 1, stalk\nGarlic, 2, clove\nOil, 1, tsp", preparation: "Pat the tofu dry.\nSlice scallion.", cooking: "Sear tofu until golden.\nAdd sauce and simmer." };
+        const emptyInventoryForm = { name: "", qty: "", unit: "g" };
 
-        const emptyForm = {
-          name: "",
-          tags: "Chinese, Dinner",
-          mainIngredients: "Tofu, 300, g\nHou Zhu Sauce, 1, tbsp",
-          pantryIngredients: "Scallion, 1, stalk\nGarlic, 2, clove\nOil, 1, tsp",
-          preparation: "Pat the tofu dry and cut into bite-size pieces.\nSlice scallion and garlic.",
-          cooking: "Sear tofu until lightly golden.\nAdd aromatics and sauce.\nSimmer briefly and serve warm.",
-        };
-
-        const emptyInventoryForm = {
-          name: "",
-          qty: "",
-          unit: "g",
-        };
-
-        function titleCase(text) {
-          return (text || "")
-            .trim()
-            .toLowerCase()
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-        }
-
-        function canonicalName(name) {
-          const key = (name || "").trim().toLowerCase();
-          return aliases[key] || titleCase(name);
-        }
-
+        function titleCase(text) { return (text || "").trim().toLowerCase().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "); }
+        function canonicalName(name) { const key = (name || "").trim().toLowerCase(); return aliases[key] || titleCase(name); }
         function normalizeUnit(unit) {
-          const value = (unit || "").trim().toLowerCase();
-          const unitAliases = {
-            piece: "pcs",
-            pieces: "pcs",
-            pc: "pcs",
-            个: "pcs",
-            gram: "g",
-            grams: "g",
-            克: "g",
-            stalks: "stalk",
-            根: "stalk",
-            cloves: "clove",
-            瓣: "clove",
-            tablespoon: "tbsp",
-            tablespoons: "tbsp",
-            tbsp: "tbsp",
-            teaspoon: "tsp",
-            teaspoons: "tsp",
-            tsp: "tsp",
-          };
-          return unitAliases[value] || value || "unit";
+          const v = (unit || "").trim().toLowerCase();
+          const ua = { piece: "pcs", pieces: "pcs", pc: "pcs", 个: "pcs", gram: "g", grams: "g", 克: "g", stalks: "stalk", 根: "stalk", cloves: "clove", 瓣: "clove", tablespoon: "tbsp", tablespoons: "tbsp", tbsp: "tbsp", teaspoon: "tsp", teaspoons: "tsp", tsp: "tsp" };
+          return ua[v] || v || "unit";
         }
-
-        function ingredient(name, qty, unit, role) {
-          return {
-            name: canonicalName(name),
-            qty: Number(qty),
-            unit: normalizeUnit(unit),
-            role: role || "main",
-          };
-        }
-
-        function standardizeIngredient(item, role) {
-          return ingredient(item.name, item.qty, item.unit, item.role || role);
-        }
-
-        function allIngredients(dish) {
-          const main = (dish.mainIngredients || []).map((item) => standardizeIngredient(item, "main"));
-          const pantry = (dish.pantryIngredients || []).map((item) => standardizeIngredient(item, "pantry"));
-          if (main.length || pantry.length) return main.concat(pantry);
-          return (dish.ingredients || []).map((item) => standardizeIngredient(item, "main"));
-        }
-
-        function mainIngredients(dish) {
-          const items = dish.mainIngredients && dish.mainIngredients.length ? dish.mainIngredients : dish.ingredients || [];
-          return items.map((item) => standardizeIngredient(item, "main"));
-        }
-
-        function mergeItems(items) {
-          const map = new Map();
-          items.forEach((raw) => {
-            const item = standardizeIngredient(raw, raw.role);
-            if (!Number.isFinite(item.qty) || item.qty <= 0) return;
-            const key = canonicalName(item.name).toLowerCase() + "-" + normalizeUnit(item.unit);
-            const current = map.get(key) || {
-              name: canonicalName(item.name),
-              unit: normalizeUnit(item.unit),
-              qty: 0,
-              roles: new Set(),
-            };
-            current.qty += item.qty;
-            current.roles.add(item.role || "main");
-            map.set(key, current);
-          });
-          return Array.from(map.values())
-            .map((item) => ({
-              name: item.name,
-              unit: item.unit,
-              qty: roundQty(item.qty),
-              role: item.roles.has("main") ? "main" : "pantry",
-            }))
-            .sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        function roundQty(qty) {
-          return Math.round(qty * 100) / 100;
-        }
-
-        function formatAmount(qty, unit) {
-          const rounded = roundQty(Number(qty));
-          return (Number.isInteger(rounded) ? rounded : rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")) + " " + unit;
-        }
-
-        function estimateCalories(ingredients) {
-          const total = ingredients.reduce((sum, item) => {
-            const key = canonicalName(item.name).toLowerCase();
-            const unit = normalizeUnit(item.unit);
-            const direct = calorieLookup[key] && calorieLookup[key][unit];
-            if (direct !== undefined) return sum + direct * item.qty;
-
-            const partialKey = Object.keys(calorieLookup).find((candidate) => key.includes(candidate));
-            const partial = partialKey && calorieLookup[partialKey][unit];
-            if (partial !== undefined) return sum + partial * item.qty;
-
-            if (unit === "g") return sum + item.qty;
-            if (unit === "pcs") return sum + item.qty * 35;
-            if (unit === "tbsp") return sum + item.qty * 80;
-            if (unit === "tsp") return sum + item.qty * 30;
-            return sum + item.qty * 20;
-          }, 0);
-          return Math.max(40, Math.round(total / 5) * 5);
-        }
-
-        function generateSubtitle(name, ingredients) {
-          const names = mergeItems(ingredients).slice(0, 3).map((item) => item.name);
-          if (names.length === 0) return "A simple home-style dish for two";
-          if (names.length === 1) return "A simple home-style dish built around " + names[0];
-          const last = names.pop();
-          return "Home-style " + name.toLowerCase() + " with " + names.join(", ") + " and " + last;
-        }
-
-        function parseTags(text) {
-          return Array.from(
-            new Set(
-              (text || "")
-                .split(",")
-                .map((tag) => titleCase(tag))
-                .filter(Boolean)
-            )
-          );
-        }
-
-        function dishMatchesSearch(dish, query) {
-          const term = (query || "").trim().toLowerCase();
-          if (!term) return true;
-          const searchable = [
-            dish.name,
-            dish.subtitle,
-            (dish.tags || []).join(" "),
-            allIngredients(dish).map((item) => item.name).join(" "),
-          ]
-            .join(" ")
-            .toLowerCase();
-          return searchable.includes(term);
-        }
-
-        function parseIngredients(text, role) {
-          return text
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean)
-            .map((line) => {
-              const parts = line.split(",").map((part) => part.trim());
-              if (parts.length < 3) return null;
-              const qty = Number(parts[1]);
-              if (!parts[0] || !Number.isFinite(qty) || qty <= 0 || !parts[2]) return null;
-              return ingredient(parts[0], qty, parts[2], role);
-            })
-            .filter(Boolean);
-        }
-
-        function migrateDish(raw) {
-          const main = raw.mainIngredients || raw.ingredients || [];
-          const pantry = raw.pantryIngredients || [];
-          const preparation = raw.preparation || (raw.steps || []).slice(0, 2);
-          const cooking = raw.cooking || (raw.steps || []).slice(2);
-          const all = mergeItems(main.concat(pantry));
-          return Object.assign({}, raw, {
-            mainIngredients: mergeItems(main.map((item) => standardizeIngredient(item, "main"))),
-            pantryIngredients: mergeItems(pantry.map((item) => standardizeIngredient(item, "pantry"))),
-            ingredients: undefined,
-            steps: undefined,
-            preparation: preparation.length ? preparation : ["Prepare ingredients before cooking."],
-            cooking: cooking.length ? cooking : ["Cook everything together until done."],
-            calories: raw.calories || estimateCalories(all),
-            tags: Array.isArray(raw.tags) ? raw.tags.map(titleCase).filter(Boolean) : [],
-          });
-        }
-
-        function readCustomDishes() {
-          try {
-            const current = JSON.parse(localStorage.getItem(DISH_STORAGE_KEY) || "[]");
-            if (current.length) return current.map(migrateDish);
-            const old = JSON.parse(localStorage.getItem(OLD_DISH_STORAGE_KEY) || "[]");
-            return old.map(migrateDish);
-          } catch (error) {
-            return [];
-          }
-        }
-
-        function readInventory() {
-          try {
-            const saved = JSON.parse(localStorage.getItem(INVENTORY_STORAGE_KEY) || "[]");
-            const source = saved.length ? saved : defaultInventory;
-            return mergeItems(source.map((item) => standardizeIngredient(item, "pantry")));
-          } catch (error) {
-            return defaultInventory;
-          }
-        }
+        function ingredient(name, qty, unit, role) { return { name: canonicalName(name), qty: Number(qty), unit: normalizeUnit(unit), role: role || "main" }; }
+        function roundQty(qty) { return Math.round(qty * 100) / 100; }
+        function formatAmount(qty, unit) { const r = roundQty(Number(qty)); return (Number.isInteger(r) ? r : r.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")) + " " + unit; }
+        function parseTags(text) { return Array.from(new Set((text || "").split(",").map(t => titleCase(t)).filter(Boolean))); }
+        function parseIngredients(text, role) { return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const p = l.split(",").map(part => part.trim()); if (p.length < 3) return null; const q = Number(p[1]); if (!p[0] || !Number.isFinite(q) || q <= 0 || !p[2]) return null; return ingredient(p[0], q, p[2], role); }).filter(Boolean); }
 
         function App() {
-          const [customDishes, setCustomDishes] = useState(readCustomDishes);
-          const [inventory, setInventory] = useState(readInventory);
+          const [session, setSession] = useState(null);
+          const [password, setPassword] = useState("");
+          const [authError, setAuthError] = useState("");
+          const [isDataLoading, setIsDataLoading] = useState(true);
+
+          const [customDishes, setCustomDishes] = useState([]);
+          const [inventory, setInventory] = useState([]);
+          const [calorieLookup, setCalorieLookup] = useState({});
+          
           const [orders, setOrders] = useState([]);
           const [selectedDish, setSelectedDish] = useState(null);
           const [isFormOpen, setIsFormOpen] = useState(false);
@@ -426,604 +114,375 @@
           const [inventoryForm, setInventoryForm] = useState(emptyInventoryForm);
           const [searchQuery, setSearchQuery] = useState("");
 
+          // 🔐 1. 监测手机本地是否有登录缓存
           useEffect(() => {
-            localStorage.setItem(DISH_STORAGE_KEY, JSON.stringify(customDishes));
-          }, [customDishes]);
+            supabase.auth.getSession().then(({ data: { session } }) => {
+              setSession(session);
+            });
+            supabase.auth.onAuthStateChange((_event, session) => {
+              setSession(session);
+            });
+          }, []);
 
+          // 🚀 2. 登录成功后，从云端关系型数据表精准拉取数据
           useEffect(() => {
-            localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
-          }, [inventory]);
+            if (!session) return;
+            async function loadCloudData() {
+              setIsDataLoading(true);
+              try {
+                // A. 拉取全量云端卡路里营养字典
+                const { data: nutr } = await supabase.from('ingredient_nutrition').select('*');
+                const lookup = {};
+                if (nutr) {
+                  nutr.forEach(r => {
+                    const k = r.name.toLowerCase();
+                    if (!lookup[k]) lookup[k] = {};
+                    lookup[k][r.unit.toLowerCase()] = Number(r.calories_per_unit);
+                  });
+                }
+                setCalorieLookup(lookup);
 
-          const dishes = useMemo(() => baseDishes.concat(customDishes).map(migrateDish), [customDishes]);
-          const visibleDishes = useMemo(
-            () => dishes.filter((dish) => dishMatchesSearch(dish, searchQuery)),
-            [dishes, searchQuery]
-          );
+                // B. 极其性感的“图状关联拉取”：拉取菜谱的同时，级联带出它名下的所有食材！
+                const { data: rec } = await supabase.from('recipes').select('*, recipe_ingredients(*)');
+                if (rec) {
+                  const mappedDishes = rec.map(r => ({
+                    id: Number(r.id),
+                    name: r.name,
+                    subtitle: r.subtitle,
+                    time: r.time_estimate,
+                    tags: r.tags,
+                    accent: r.accent,
+                    preparation: r.preparation,
+                    cooking: r.cooking,
+                    custom: r.is_custom,
+                    mainIngredients: r.recipe_ingredients.filter(i => i.role === 'main'),
+                    pantryIngredients: r.recipe_ingredients.filter(i => i.role === 'pantry')
+                  }));
+                  setCustomDishes(mappedDishes);
+                }
 
-          const orderItems = useMemo(() => {
-            return orders
-              .map((entry) => {
-                const dish = dishes.find((item) => item.id === entry.id);
-                return dish ? Object.assign({}, dish, { count: entry.count }) : null;
-              })
-              .filter(Boolean);
-          }, [orders, dishes]);
+                // C. 拉取冰箱实时库存
+                const { data: inv } = await supabase.from('pantry_inventory').select('*');
+                if (inv) setInventory(inv.map(i => ({ name: i.name, qty: Number(i.qty), unit: i.unit, role: 'pantry' })));
 
+              } catch (e) {
+                console.error("Cloud synchronization failed", e);
+              } finally {
+                setIsDataLoading(false);
+              }
+            }
+            loadCloudData();
+          }, [session]);
+
+          // 🔑 登录处理器（点击暗号按钮）
+          async function handleLogin(e) {
+            e.preventDefault();
+            setAuthError("");
+            const { error } = await supabase.auth.signInWithPassword({
+              email: FAMILY_EMAIL,
+              password: password
+            });
+            if (error) setAuthError("暗号错误，密码不匹配噢 🐾");
+          }
+
+          // 🧮 动态计算卡路里引擎（实时查找云端字典）
+          const estimateCalories = (ingredients) => {
+            const total = ingredients.reduce((sum, item) => {
+              const key = item.name.toLowerCase();
+              const unit = item.unit.toLowerCase();
+              if (calorieLookup[key] && calorieLookup[key][unit] !== undefined) {
+                return sum + calorieLookup[key][unit] * item.qty;
+              }
+              if (unit === "g") return sum + item.qty;
+              if (unit === "pcs") return sum + item.qty * 35;
+              return sum + item.qty * 20;
+            }, 0);
+            return Math.max(40, Math.round(total / 5) * 5);
+          };
+
+          const dishes = useMemo(() => baseDishes.concat(customDishes).map(d => {
+            const all = (d.mainIngredients || []).concat(d.pantryIngredients || []);
+            return Object.assign({}, d, { calories: d.calories || estimateCalories(all) });
+          }), [customDishes, calorieLookup]);
+
+          const visibleDishes = useMemo(() => dishes.filter(d => (d.name || "").toLowerCase().includes(searchQuery.toLowerCase())), [dishes, searchQuery]);
+          const orderItems = useMemo(() => orders.map(e => { const d = dishes.find(i => i.id === e.id); return d ? Object.assign({}, d, { count: e.count }) : null; }).filter(Boolean), [orders, dishes]);
+          
           const requiredList = useMemo(() => {
             const expanded = [];
-            orderItems.forEach((dish) => {
-              allIngredients(dish).forEach((item) => {
-                expanded.push(Object.assign({}, item, { qty: item.qty * dish.count }));
-              });
+            orderItems.forEach(dish => {
+              const all = (dish.mainIngredients || []).concat(dish.pantryIngredients || []);
+              all.forEach(item => expanded.push(Object.assign({}, item, { qty: item.qty * dish.count })));
             });
-            return mergeItems(expanded);
+            // 简单去重合并
+            const map = new Map();
+            expanded.forEach(item => {
+              const k = item.name.toLowerCase() + "-" + item.unit.toLowerCase();
+              const curr = map.get(k) || { name: item.name, unit: item.unit, qty: 0 };
+              curr.qty += item.qty;
+              map.set(k, curr);
+            });
+            return Array.from(map.values());
           }, [orderItems]);
 
           const groceryList = useMemo(() => {
-            return requiredList
-              .map((required) => {
-                const stock = inventory.find(
-                  (item) => item.name.toLowerCase() === required.name.toLowerCase() && item.unit === required.unit
-                );
-                const inStock = stock ? stock.qty : 0;
-                return Object.assign({}, required, {
-                  requiredQty: required.qty,
-                  inStock,
-                  buyQty: Math.max(0, roundQty(required.qty - inStock)),
-                });
-              })
-              .filter((item) => item.buyQty > 0);
+            return requiredList.map(req => {
+              const stock = inventory.find(i => i.name.toLowerCase() === req.name.toLowerCase() && i.unit === req.unit);
+              const inStock = stock ? stock.qty : 0;
+              return Object.assign({}, req, { requiredQty: req.qty, inStock, buyQty: Math.max(0, roundQty(req.qty - inStock)) });
+            }).filter(item => item.buyQty > 0);
           }, [requiredList, inventory]);
 
           const coveredList = useMemo(() => {
-            return requiredList
-              .map((required) => {
-                const stock = inventory.find(
-                  (item) => item.name.toLowerCase() === required.name.toLowerCase() && item.unit === required.unit
-                );
-                const inStock = stock ? stock.qty : 0;
-                return Object.assign({}, required, { inStock });
-              })
-              .filter((item) => item.inStock >= item.qty && item.qty > 0);
+            return requiredList.map(req => {
+              const stock = inventory.find(i => i.name.toLowerCase() === req.name.toLowerCase() && i.unit === req.unit);
+              const inStock = stock ? stock.qty : 0;
+              return Object.assign({}, req, { inStock });
+            }).filter(item => item.inStock >= item.qty && item.qty > 0);
           }, [requiredList, inventory]);
 
           const servings = orderItems.reduce((sum, item) => sum + item.count * 2, 0);
 
-          function addDish(id) {
-            setOrders((current) => {
-              const existing = current.find((item) => item.id === id);
-              if (existing) {
-                return current.map((item) =>
-                  item.id === id ? Object.assign({}, item, { count: item.count + 1 }) : item
-                );
-              }
-              return current.concat({ id, count: 1 });
-            });
-          }
+          function updateDish(id, delta) { setOrders(curr => curr.map(item => item.id === id ? Object.assign({}, item, { count: Math.max(0, item.count + delta) }) : item).filter(item => item.count > 0)); }
+          function addDish(id) { setOrders(curr => { const e = curr.find(i => i.id === id); return e ? curr.map(i => i.id === id ? Object.assign({}, i, { count: i.count + 1 }) : i) : curr.concat({ id, count: 1 }); }); }
 
-          function updateDish(id, delta) {
-            setOrders((current) =>
-              current
-                .map((item) =>
-                  item.id === id ? Object.assign({}, item, { count: Math.max(0, item.count + delta) }) : item
-                )
-                .filter((item) => item.count > 0)
-            );
-          }
-
-          function removeDish(id) {
-            setOrders((current) => current.filter((item) => item.id !== id));
-          }
-
-          function submitDish(event) {
+          // 🚀 云端写入：向数据库塞入一道精美新菜谱
+          async function submitDish(event) {
             event.preventDefault();
             const name = form.name.trim();
             const parsedMain = parseIngredients(form.mainIngredients, "main");
             const parsedPantry = parseIngredients(form.pantryIngredients, "pantry");
             const tags = parseTags(form.tags);
-            const preparation = form.preparation.split("\n").map((line) => line.trim()).filter(Boolean);
-            const cooking = form.cooking.split("\n").map((line) => line.trim()).filter(Boolean);
+            const preparation = form.preparation.split("\n").map(l => l.trim()).filter(Boolean);
+            const cooking = form.cooking.split("\n").map(l => l.trim()).filter(Boolean);
 
-            if (!name) {
-              setFormError("Please enter a dish name.");
-              return;
-            }
-            if (parsedMain.length === 0) {
-              setFormError("Add at least one main ingredient as: Name, quantity, unit.");
-              return;
-            }
-            if (preparation.length === 0 || cooking.length === 0) {
-              setFormError("Add at least one preparation step and one cooking step.");
-              return;
-            }
+            if (!name || parsedMain.length === 0) { setFormError("请至少输入菜名和一个主料噢！"); return; }
 
-            const all = mergeItems(parsedMain.concat(parsedPantry));
-            const newDish = {
-              id: Date.now(),
-              name,
-              subtitle: generateSubtitle(name, parsedMain),
-              time: Math.max(10, (preparation.length + cooking.length) * 4) + " min",
-              calories: estimateCalories(all),
-              source: "Calories use standardized ingredient names, amounts, and common nutrition values.",
-              tags,
-              accent: ["#d78a55", "#8fbc8f", "#f0c36a"],
-              mainIngredients: mergeItems(parsedMain),
-              pantryIngredients: mergeItems(parsedPantry),
-              preparation,
-              cooking,
-              custom: true,
-            };
+            // 1. 先向 recipes 主表插入基本数据
+            const { data: newRec, error: rErr } = await supabase.from('recipes').insert([{
+              name, subtitle: name + "配美味食材", time_estimate: "15 min", tags, accent: ["#d78a55", "#8fbc8f", "#f0c36a"], preparation, cooking, is_custom: true
+            }]).select().single();
 
-            setCustomDishes((current) => current.concat(newDish));
-            setForm(emptyForm);
-            setFormError("");
-            setIsFormOpen(false);
+            if (rErr || !newRec) { setFormError("存储主表失败啦，请重试！"); return; }
+
+            // 2. 利用拿到的主表 ID，向桥梁子表批量灌入关联食材行
+            const ingredientRows = parsedMain.concat(parsedPantry).map(i => ({
+              recipe_id: newRec.id, name: i.name, qty: i.qty, unit: i.unit, role: i.role
+            }));
+            await supabase.from('recipe_ingredients').insert(ingredientRows);
+
+            // 3. 本地状态更新，刷新 UI
+            const finalNewDish = { id: Number(newRec.id), name, subtitle: newRec.subtitle, time: "15 min", tags, accent: ["#d78a55", "#8fbc8f", "#f0c36a"], preparation, cooking, custom: true, mainIngredients: parsedMain, pantryIngredients: parsedPantry };
+            setCustomDishes(curr => curr.concat(finalNewDish));
+            setForm(emptyForm); setIsFormOpen(false); setFormError("");
           }
 
-          function addInventory(event) {
+          // 🚀 云端写入：增加或覆盖冰箱库存
+          async function addInventory(event) {
             event.preventDefault();
             const qty = Number(inventoryForm.qty);
-            if (!inventoryForm.name.trim() || !Number.isFinite(qty) || qty <= 0 || !inventoryForm.unit.trim()) return;
-            setInventory((current) =>
-              mergeItems(current.concat(ingredient(inventoryForm.name, qty, inventoryForm.unit, "pantry")))
-            );
+            const cName = canonicalName(inventoryForm.name);
+            const normUnit = normalizeUnit(inventoryForm.unit);
+            if (!cName || !Number.isFinite(qty) || qty <= 0) return;
+
+            // 利用 UNIQUE 约束直接进行高大上的 Upsert（存在则更新克数，不存在则创建）
+            await supabase.from('pantry_inventory').upsert({ name: cName, qty, unit: normUnit }, { onConflict: 'name' });
+            
+            setInventory(curr => {
+              const filtered = curr.filter(i => i.name.toLowerCase() !== cName.toLowerCase());
+              return filtered.concat({ name: cName, qty, unit: normUnit, role: 'pantry' });
+            });
             setInventoryForm(emptyInventoryForm);
           }
 
-          function removeInventoryItem(name, unit) {
-            setInventory((current) =>
-              current.filter((item) => !(item.name.toLowerCase() === name.toLowerCase() && item.unit === unit))
+          // 🚀 云端写入：从冰箱中踢走食材
+          async function removeInventoryItem(name) {
+            await supabase.from('pantry_inventory').delete().eq('name', name);
+            setInventory(curr => curr.filter(i => i.name.toLowerCase() !== name.toLowerCase()));
+          }
+
+          // ==========================================
+          // 🔒 奶油复古门禁视觉防御遮罩 
+          // ==========================================
+          if (!session) {
+            return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-cream/95 px-4 backdrop-blur-md" },
+              h("form", { onSubmit: handleLogin, className: "w-full max-w-md rounded-2xl border border-cedar/10 bg-white p-8 shadow-soft text-center" },
+                h("p", { className: "text-sm font-medium uppercase tracking-wider text-clay mb-2" }, "🔐 Private Domain"),
+                h("h2", { className: "text-3xl font-semibold text-ink tracking-tight mb-4" }, "potacat 私房菜馆"),
+                h("p", { className: "text-sm text-cedar/70 mb-6 leading-relaxed" }, "这是一个属于我们两人的私密美食城堡，\n请输入家庭暗号信物进入。"),
+                h("input", {
+                  type: "password",
+                  value: password,
+                  placeholder: "输入专属纪念日密码...",
+                  onChange: (e) => setPassword(e.target.value),
+                  className: "w-full text-center rounded-xl border border-cedar/15 bg-cream px-4 py-3 text-base outline-none tracking-widest focus:border-clay focus:ring-4 focus:ring-clay/15 mb-4"
+                }),
+                authError && h("p", { className: "text-sm text-red-600 mb-4 font-medium" }, authError),
+                h("button", { type: "submit", className: "w-full rounded-xl bg-ink px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-cedar" }, "拉开大门 🚪")
+              )
             );
           }
 
-          return h(
-            "main",
-            { className: "mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10" },
-            h(
-              "header",
-              { className: "flex flex-col gap-5 border-b border-cedar/10 pb-6 lg:flex-row lg:items-end lg:justify-between" },
-              h(
-                "div",
-                { className: "max-w-2xl" },
+          if (isDataLoading) {
+            return h("div", { className: "grid min-h-screen place-items-center text-xl font-semibold text-clay tracking-wide animate-pulse" }, "正在同步云端大平层中...");
+          }
+
+          // ==========================================
+          // 🎨 原版精美高颜值业务 UI 渲染
+          // ==========================================
+          return h("main", { className: "mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10" },
+            h("header", { className: "flex flex-col gap-5 border-b border-cedar/10 pb-6 lg:flex-row lg:items-end lg:justify-between" },
+              h("div", { className: "max-w-2xl" },
                 h("p", { className: "mb-2 text-sm font-medium uppercase text-clay" }, "Family table"),
                 h("h1", { className: "text-4xl font-semibold tracking-normal text-ink sm:text-5xl" }, "Family Menu"),
-                h(
-                  "p",
-                  { className: "mt-3 max-w-xl text-base leading-7 text-cedar/75" },
-                  "Plan dinner from standardized ingredients, track pantry stock, and buy only what is missing."
-                )
+                h("p", { className: "mt-3 max-w-xl text-base leading-7 text-cedar/75" }, "Plan dinner from cloud relational database. Tracking secure pantry stock live.")
               ),
-              h(
-                "div",
-                { className: "flex flex-col gap-3 sm:items-end" },
-                h(
-                  "button",
-                  {
-                    onClick: () => setIsFormOpen(true),
-                    className: "rounded-lg bg-ink px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cedar focus:outline-none focus:ring-4 focus:ring-cedar/15",
-                  },
-                  "Add to Menu"
-                ),
-                h(
-                  "div",
-                  { className: "grid grid-cols-3 gap-3 rounded-lg border border-white/70 bg-white/65 p-3 shadow-soft backdrop-blur" },
-                  h(Stat, { label: "Dishes", value: orderItems.length }),
-                  h(Stat, { label: "Servings", value: servings || 0 }),
-                  h(Stat, { label: "To Buy", value: groceryList.length })
+              h("div", { className: "flex flex-col gap-3 sm:items-end" },
+                h("button", { onClick: () => setIsFormOpen(true), className: "rounded-lg bg-ink px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cedar" }, "Add to Menu"),
+                h("div", { className: "grid grid-cols-3 gap-3 rounded-lg border border-white/70 bg-white/65 p-3 shadow-soft backdrop-blur" },
+                  h(Stat, { label: "Dishes", value: orderItems.length }), h(Stat, { label: "Servings", value: servings || 0 }), h(Stat, { label: "To Buy", value: groceryList.length })
                 )
               )
             ),
-            h(
-              "section",
-              { className: "grid flex-1 gap-6 lg:grid-cols-[1.2fr_.9fr]" },
-              h(
-                "div",
-                { className: "space-y-4" },
-                h(
-                  "div",
-                  { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
-                  h(
-                    "div",
-                    null,
-                    h("h2", { className: "text-xl font-semibold" }, "Dinner Menu"),
-                    h("p", { className: "mt-1 text-sm text-cedar/65" }, "Search by dish, tag, or ingredient.")
-                  ),
-                  h("input", {
-                    value: searchQuery,
-                    placeholder: "Search Chinese, pork, tofu...",
-                    onChange: (event) => setSearchQuery(event.target.value),
-                    className: "w-full rounded-lg border border-white/70 bg-white/80 px-3 py-3 text-sm outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/15 sm:max-w-xs",
-                  })
+            h("section", { className: "grid flex-1 gap-6 lg:grid-cols-[1.2fr_.9fr]" },
+              h("div", { className: "space-y-4" },
+                h("div", { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
+                  h("div", null, h("h2", { className: "text-xl font-semibold" }, "Dinner Menu"), h("p", { className: "mt-1 text-sm text-cedar/65" }, "Secure live synchronization active.")),
+                  h("input", { value: searchQuery, placeholder: "Search recipes...", onChange: (e) => setSearchQuery(e.target.value), className: "w-full rounded-lg border border-white/70 bg-white/80 px-3 py-3 text-sm outline-none sm:max-w-xs focus:border-clay" })
                 ),
-                visibleDishes.length
-                  ? h(
-                      "div",
-                      { className: "grid gap-4 sm:grid-cols-2" },
-                      visibleDishes.map((dish) =>
-                        h(DishCard, {
-                          key: dish.id,
-                          dish,
-                          onAdd: () => addDish(dish.id),
-                          onOpen: () => setSelectedDish(dish),
-                        })
-                      )
-                    )
-                  : h("p", { className: "rounded-lg bg-white/70 p-5 text-sm text-cedar/70" }, "No recipes match this search.")
+                h("div", { className: "grid gap-4 sm:grid-cols-2" },
+                  visibleDishes.map(dish => h(DishCard, { key: dish.id, dish, onAdd: () => addDish(dish.id), onOpen: () => setSelectedDish(dish) }))
+                )
               ),
-              h(Sidebar, {
-                orderItems,
-                requiredList,
-                groceryList,
-                coveredList,
-                inventory,
-                inventoryForm,
-                setInventoryForm,
-                onAddInventory: addInventory,
-                onRemoveInventory: removeInventoryItem,
-                onClear: () => setOrders([]),
-                onUpdate: updateDish,
-                onRemove: removeDish,
-              })
+              h(Sidebar, { orderItems, requiredList, groceryList, coveredList, inventory, inventoryForm, setInventoryForm, onAddInventory: addInventory, onRemoveInventory: (name) => removeInventoryItem(name), onClear: () => setOrders([]), onUpdate: updateDish, onRemove: (id) => setOrders(curr => curr.filter(i => i.id !== id)) })
             ),
-            selectedDish &&
-              h(RecipeModal, {
-                dish: selectedDish,
-                onClose: () => setSelectedDish(null),
-              }),
-            isFormOpen &&
-              h(AddDishModal, {
-                form,
-                formError,
-                setForm,
-                onClose: () => {
-                  setIsFormOpen(false);
-                  setFormError("");
-                },
-                onSubmit: submitDish,
-              })
+            selectedDish && h(RecipeModal, { dish: selectedDish, onClose: () => setSelectedDish(null) }),
+            isFormOpen && h(AddDishModal, { form, formError, setForm, onClose: () => { setIsFormOpen(false); setFormError(""); }, onSubmit: submitDish })
           );
         }
 
+        // ==========================================
+        // 🧱 UI 子零配件（无缝对接 V1 版样式逻辑）
+        // ==========================================
         function DishCard({ dish, onAdd, onOpen }) {
-          const displayIngredients = mainIngredients(dish);
+          const displayIngredients = dish.mainIngredients || [];
           const caloriesPerServing = Math.round((dish.calories || 0) / 2);
-          return h(
-            "article",
-            { className: "overflow-hidden rounded-lg border border-white/70 bg-white/80 shadow-soft backdrop-blur" },
-            h("div", {
-              className: "dish-art h-40",
-              style: {
-                "--accent-a": dish.accent[0],
-                "--accent-b": dish.accent[1],
-                "--accent-c": dish.accent[2],
-              },
-              "aria-hidden": "true",
-            }),
-            h(
-              "div",
-              { className: "space-y-5 p-5" },
-              h(
-                "div",
-                null,
-                h(
-                  "div",
-                  { className: "mb-2 flex items-start justify-between gap-3" },
-                  h(
-                    "button",
-                    {
-                      onClick: onOpen,
-                      className: "min-w-0 text-left text-xl font-semibold leading-tight underline-offset-4 transition hover:text-clay hover:underline focus:outline-none focus:ring-4 focus:ring-clay/15",
-                    },
-                    dish.name
-                  ),
+          return h("article", { className: "overflow-hidden rounded-lg border border-white/70 bg-white/80 shadow-soft" },
+            h("div", { className: "dish-art h-40", style: { "--accent-a": dish.accent[0], "--accent-b": dish.accent[1], "--accent-c": dish.accent[2] } }),
+            h("div", { className: "space-y-5 p-5" },
+              h("div", null,
+                h("div", { className: "mb-2 flex items-start justify-between gap-3" },
+                  h("button", { onClick: onOpen, className: "min-w-0 text-left text-xl font-semibold leading-tight underline-offset-4 hover:text-clay hover:underline focus:outline-none" }, dish.name),
                   h("span", { className: "shrink-0 rounded-full bg-oat px-3 py-1 text-sm text-cedar" }, dish.time)
                 ),
                 h("p", { className: "text-sm leading-6 text-cedar/70" }, dish.subtitle),
-                h(
-                  "div",
-                  { className: "mt-3 flex flex-wrap gap-2" },
+                h("div", { className: "mt-3 flex flex-wrap gap-2" },
                   h("span", { className: "rounded-full bg-clay/10 px-3 py-1 text-sm font-semibold text-clay" }, caloriesPerServing + " kcal / serving"),
-                  (dish.tags || []).map((tag) =>
-                    h("span", { key: dish.id + "-tag-" + tag, className: "rounded-full bg-white px-3 py-1 text-sm text-cedar/70" }, tag)
-                  )
+                  (dish.tags || []).map(tag => h("span", { key: tag, className: "rounded-full bg-white px-3 py-1 text-sm text-cedar/70" }, tag))
                 )
               ),
-              h(
-                "div",
-                { className: "flex flex-wrap gap-2" },
-                displayIngredients.map((item) =>
-                  h(
-                    "span",
-                    { key: dish.id + "-" + item.name + "-" + item.unit, className: "rounded-full bg-cream px-3 py-1 text-sm text-cedar" },
-                    item.name + " - " + formatAmount(item.qty, item.unit)
-                  )
-                )
+              h("div", { className: "flex flex-wrap gap-2" },
+                displayIngredients.map(item => h("span", { key: item.name, className: "rounded-full bg-cream px-3 py-1 text-sm text-cedar" }, item.name + " - " + formatAmount(item.qty, item.unit)))
               ),
-              h(
-                "button",
-                {
-                  onClick: onAdd,
-                  className: "w-full rounded-lg bg-clay px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cedar focus:outline-none focus:ring-4 focus:ring-clay/20",
-                },
-                "Add to Cook List"
-              )
+              h("button", { onClick: onAdd, className: "w-full rounded-lg bg-clay px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cedar" }, "Add to Cook List")
             )
           );
         }
 
-        function Sidebar(props) {
-          return h(
-            "aside",
-            { className: "space-y-4" },
-            h(CookList, props),
-            h(InventoryPanel, props),
-            h(GroceryPanel, props)
-          );
-        }
-
+        function Sidebar(props) { return h("aside", { className: "space-y-4" }, h(CookList, props), h(InventoryPanel, props), h(GroceryPanel, props)); }
         function CookList({ orderItems, onClear, onUpdate, onRemove }) {
-          return h(
-            "div",
-            { className: "space-y-4" },
-            h(
-              "div",
-              { className: "flex items-center justify-between" },
-              h("h2", { className: "text-xl font-semibold" }, "Cook List"),
-              h("button", { onClick: onClear, disabled: orderItems.length === 0, className: "rounded-full px-3 py-1 text-sm font-medium text-clay transition hover:bg-white/70 disabled:cursor-not-allowed disabled:text-cedar/30" }, "Clear")
-            ),
-            h(
-              "div",
-              { className: "rounded-lg border border-white/70 bg-white/80 p-5 shadow-soft backdrop-blur" },
-              orderItems.length === 0
-                ? h(EmptyState)
-                : h(
-                    "div",
-                    { className: "space-y-3" },
-                    orderItems.map((dish) =>
-                      h(
-                        "div",
-                        { key: dish.id, className: "flex items-center justify-between gap-4 rounded-lg bg-cream p-3" },
-                        h("div", { className: "min-w-0" }, h("p", { className: "truncate font-medium" }, dish.name), h("p", { className: "text-sm text-cedar/65" }, dish.count * 2 + " servings")),
-                        h(
-                          "div",
-                          { className: "flex items-center gap-2" },
-                          h("button", { onClick: () => onUpdate(dish.id, -1), className: "grid h-8 w-8 place-items-center rounded-full bg-white text-lg leading-none text-cedar transition hover:bg-oat", "aria-label": "Decrease " + dish.name }, "-"),
-                          h("span", { className: "w-5 text-center text-sm font-semibold" }, dish.count),
-                          h("button", { onClick: () => onUpdate(dish.id, 1), className: "grid h-8 w-8 place-items-center rounded-full bg-white text-lg leading-none text-cedar transition hover:bg-oat", "aria-label": "Increase " + dish.name }, "+"),
-                          h("button", { onClick: () => onRemove(dish.id), className: "ml-1 rounded-full px-2 py-1 text-sm text-clay transition hover:bg-white" }, "Remove")
-                        )
-                      )
-                    )
+          return h("div", { className: "space-y-4" },
+            h("div", { className: "flex items-center justify-between" }, h("h2", { className: "text-xl font-semibold" }, "Cook List"), h("button", { onClick: onClear, disabled: orderItems.length === 0, className: "rounded-full px-3 py-1 text-sm font-medium text-clay disabled:text-cedar/30" }, "Clear")),
+            h("div", { className: "rounded-lg border border-white/70 bg-white/80 p-5 shadow-soft" },
+              orderItems.length === 0 ? h("div", { className: "text-center p-4 text-cedar/60" }, "No dishes yet") : h("div", { className: "space-y-3" },
+                orderItems.map(dish => h("div", { key: dish.id, className: "flex items-center justify-between gap-4 rounded-lg bg-cream p-3" },
+                  h("div", { className: "min-w-0" }, h("p", { className: "truncate font-medium" }, dish.name), h("p", { className: "text-sm text-cedar/65" }, dish.count * 2 + " servings")),
+                  h("div", { className: "flex items-center gap-2" },
+                    h("button", { onClick: () => onUpdate(dish.id, -1), className: "h-8 w-8 rounded-full bg-white text-cedar hover:bg-oat" }, "-"),
+                    h("span", { className: "w-5 text-center text-sm font-semibold" }, dish.count),
+                    h("button", { onClick: () => onUpdate(dish.id, 1), className: "h-8 w-8 rounded-full bg-white text-cedar hover:bg-oat" }, "+"),
+                    h("button", { onClick: () => onRemove(dish.id), className: "ml-1 text-sm text-clay" }, "Remove")
                   )
+                ))
+              )
             )
           );
         }
 
         function InventoryPanel({ inventory, inventoryForm, setInventoryForm, onAddInventory, onRemoveInventory }) {
-          function change(field, value) {
-            setInventoryForm((current) => Object.assign({}, current, { [field]: value }));
-          }
-
-          return h(
-            "div",
-            { className: "rounded-lg border border-white/70 bg-white/80 p-5 shadow-soft backdrop-blur" },
+          return h("div", { className: "rounded-lg border border-white/70 bg-white/80 p-5 shadow-soft" },
             h("h2", { className: "text-xl font-semibold" }, "Home Inventory"),
-            h("p", { className: "mt-1 text-sm text-cedar/65" }, "Stock uses standardized names before grocery math."),
-            h(
-              "form",
-              { onSubmit: onAddInventory, className: "mt-4 grid grid-cols-[1fr_80px_74px_auto] gap-2" },
-              h("input", { value: inventoryForm.name, placeholder: "Ingredient", onChange: (event) => change("name", event.target.value), className: "min-w-0 rounded-lg border border-cedar/15 bg-cream px-3 py-2 text-sm outline-none focus:border-clay" }),
-              h("input", { value: inventoryForm.qty, placeholder: "Qty", type: "number", step: "0.01", onChange: (event) => change("qty", event.target.value), className: "min-w-0 rounded-lg border border-cedar/15 bg-cream px-3 py-2 text-sm outline-none focus:border-clay" }),
-              h("input", { value: inventoryForm.unit, placeholder: "Unit", onChange: (event) => change("unit", event.target.value), className: "min-w-0 rounded-lg border border-cedar/15 bg-cream px-3 py-2 text-sm outline-none focus:border-clay" }),
+            h("p", { className: "mt-1 text-sm text-cedar/65" }, "Stock uses database standardization names."),
+            h("form", { onSubmit: onAddInventory, className: "mt-4 grid grid-cols-[1fr_80px_74px_auto] gap-2" },
+              h("input", { value: inventoryForm.name, placeholder: "Ingredient", onChange: (e) => setInventoryForm(c => Object.assign({}, c, { name: e.target.value })), className: "min-w-0 rounded-lg bg-cream px-3 py-2 text-sm outline-none" }),
+              h("input", { value: inventoryForm.qty, placeholder: "Qty", type: "number", step: "0.01", onChange: (e) => setInventoryForm(c => Object.assign({}, c, { qty: e.target.value })), className: "min-w-0 rounded-lg bg-cream px-3 py-2 text-sm outline-none" }),
+              h("input", { value: inventoryForm.unit, placeholder: "Unit", onChange: (e) => setInventoryForm(c => Object.assign({}, c, { unit: e.target.value })), className: "min-w-0 rounded-lg bg-cream px-3 py-2 text-sm outline-none" }),
               h("button", { type: "submit", className: "rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-cedar" }, "Add")
             ),
-            h(
-              "div",
-              { className: "mt-4 max-h-52 space-y-2 overflow-auto pr-1" },
-              inventory.length
-                ? inventory.map((item) =>
-                    h(
-                      "div",
-                      { key: item.name + item.unit, className: "flex items-center justify-between gap-3 rounded-lg bg-cream px-3 py-2" },
-                      h("span", { className: "min-w-0 truncate text-sm font-medium" }, item.name),
-                      h(
-                        "div",
-                        { className: "flex shrink-0 items-center gap-2" },
-                        h("span", { className: "text-sm font-semibold text-clay" }, formatAmount(item.qty, item.unit)),
-                        h("button", { onClick: () => onRemoveInventory(item.name, item.unit), className: "rounded-full bg-white px-2 py-1 text-xs text-cedar hover:bg-oat" }, "Remove")
-                      )
-                    )
-                  )
-                : h("p", { className: "rounded-lg bg-cream p-3 text-sm text-cedar/65" }, "No inventory yet.")
+            h("div", { className: "mt-4 max-h-52 space-y-2 overflow-auto" },
+              inventory.length ? inventory.map(item => h("div", { key: item.name, className: "flex items-center justify-between gap-3 rounded-lg bg-cream px-3 py-2" },
+                h("span", { className: "text-sm font-medium truncate" }, item.name),
+                h("div", { className: "flex items-center gap-2 shrink-0" }, h("span", { className: "text-sm font-semibold text-clay" }, formatAmount(item.qty, item.unit)), h("button", { onClick: () => onRemoveInventory(item.name), className: "text-xs text-cedar bg-white px-2 py-1 rounded-full" }, "Remove"))
+              )) : h("p", { className: "text-sm text-cedar/65 p-2" }, "No inventory yet.")
             )
           );
         }
 
         function GroceryPanel({ requiredList, groceryList, coveredList }) {
-          return h(
-            "div",
-            { className: "wood-grain rounded-lg border border-white/70 p-5 shadow-soft" },
-            h(
-              "div",
-              { className: "mb-4 flex items-center justify-between gap-3" },
-              h("div", null, h("h2", { className: "text-xl font-semibold" }, "Grocery List"), h("p", { className: "mt-1 text-sm text-cedar/65" }, "Adjusted by home inventory.")),
-              h("span", { className: "rounded-full bg-white/80 px-3 py-1 text-sm font-medium text-cedar" }, "To buy")
-            ),
-            requiredList.length === 0
-              ? h("p", { className: "rounded-lg bg-white/60 p-4 text-sm leading-6 text-cedar/70" }, "Add a dish to see what is required.")
-              : groceryList.length === 0
-                ? h("p", { className: "rounded-lg bg-white/70 p-4 text-sm leading-6 text-cedar/70" }, "You have enough inventory for this menu.")
-                : h(
-                    "div",
-                    { className: "space-y-2" },
-                    groceryList.map((item) =>
-                      h(
-                        "div",
-                        { key: item.name + "-" + item.unit, className: "rounded-lg bg-white/75 px-4 py-3" },
-                        h("div", { className: "flex items-center justify-between gap-3" }, h("span", { className: "font-medium" }, item.name), h("span", { className: "font-semibold text-clay" }, formatAmount(item.buyQty, item.unit))),
-                        h("p", { className: "mt-1 text-xs text-cedar/60" }, "Required " + formatAmount(item.requiredQty, item.unit) + " - in stock " + formatAmount(item.inStock, item.unit))
-                      )
-                    )
-                  ),
-            coveredList.length > 0 &&
-              h(
-                "div",
-                { className: "mt-4 rounded-lg bg-white/60 p-3" },
-                h("p", { className: "text-sm font-semibold text-cedar" }, "Covered by inventory"),
-                h(
-                  "div",
-                  { className: "mt-2 flex flex-wrap gap-2" },
-                  coveredList.map((item) =>
-                    h("span", { key: item.name + item.unit, className: "rounded-full bg-cream px-3 py-1 text-xs text-cedar/70" }, item.name + " - " + formatAmount(item.qty, item.unit))
-                  )
-                )
-              )
+          return h("div", { className: "wood-grain rounded-lg border border-white/70 p-5 shadow-soft" },
+            h("div", { className: "mb-4 flex items-center justify-between gap-3" }, h("div", null, h("h2", { className: "text-xl font-semibold" }, "Grocery List"), h("p", { className: "mt-1 text-sm text-cedar/65" }, "Adjusted by live inventory.")), h("span", { className: "rounded-full bg-white/80 px-3 py-1 text-sm text-cedar" }, "To buy")),
+            requiredList.length === 0 ? h("p", { className: "text-sm text-cedar/70 p-2" }, "Add a dish to see what is required.") :
+            groceryList.length === 0 ? h("p", { className: "text-sm text-cedar/70 p-2" }, "You have enough inventory for this menu.") :
+            h("div", { className: "space-y-2" }, groceryList.map(item => h("div", { key: item.name, className: "rounded-lg bg-white/75 px-4 py-3" },
+              h("div", { className: "flex items-center justify-between gap-3" }, h("span", { className: "font-medium" }, item.name), h("span", { className: "font-semibold text-clay" }, formatAmount(item.buyQty, item.unit))),
+              h("p", { className: "mt-1 text-xs text-cedar/60" }, "Required " + formatAmount(item.requiredQty, item.unit) + " - in stock " + formatAmount(item.inStock, item.unit))
+            ))),
+            coveredList.length > 0 && h("div", { className: "mt-4 rounded-lg bg-white/60 p-3" }, h("p", { className: "text-sm font-semibold text-cedar" }, "Covered by inventory"), h("div", { className: "mt-2 flex flex-wrap gap-2" }, coveredList.map(item => h("span", { key: item.name, className: "rounded-full bg-cream px-3 py-1 text-xs text-cedar/70" }, item.name))))
           );
         }
 
         function RecipeModal({ dish, onClose }) {
-          const main = mainIngredients(dish);
-          const pantry = (dish.pantryIngredients || []).map((item) => standardizeIngredient(item, "pantry"));
-          return h(
-            "div",
-            { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 py-6 backdrop-blur-sm" },
-            h(
-              "div",
-              { className: "max-h-[88vh] w-full max-w-2xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
-              h(
-                "div",
-                { className: "mb-5 flex items-start justify-between gap-4" },
-                h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "Recipe details"), h("h2", { className: "text-2xl font-semibold" }, dish.name), h("p", { className: "mt-2 text-sm leading-6 text-cedar/70" }, dish.source)),
-                h("button", { onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold text-cedar hover:bg-oat" }, "Close")
-              ),
-              h(IngredientSection, { title: "Main Ingredients", items: main }),
-              h(IngredientSection, { title: "Pantry Ingredients", items: pantry }),
-              h(StepSection, { title: "Preparation", steps: dish.preparation || [] }),
-              h(StepSection, { title: "Cooking", steps: dish.cooking || [] })
+          return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
+            h("div", { className: "max-h-[88vh] w-full max-w-2xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
+              h("div", { className: "mb-5 flex items-start justify-between gap-4" }, h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "Recipe details"), h("h2", { className: "text-2xl font-semibold" }, dish.name), h("p", { className: "mt-2 text-sm text-cedar/70" }, dish.source)), h("button", { onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold" }, "Close")),
+              h(IngredientSection, { title: "Main Ingredients", items: dish.mainIngredients || [] }), h(IngredientSection, { title: "Pantry Ingredients", items: dish.pantryIngredients || [] }),
+              h(StepSection, { title: "Preparation", steps: dish.preparation || [] }), h(StepSection, { title: "Cooking", steps: dish.cooking || [] })
             )
           );
         }
-
-        function IngredientSection({ title, items }) {
-          return h(
-            "section",
-            { className: "mb-5" },
-            h("h3", { className: "mb-2 text-sm font-semibold uppercase text-clay" }, title),
-            h(
-              "div",
-              { className: "flex flex-wrap gap-2" },
-              items.length
-                ? items.map((item) => h("span", { key: title + item.name + item.unit, className: "rounded-full bg-white px-3 py-1 text-sm text-cedar" }, item.name + " - " + formatAmount(item.qty, item.unit)))
-                : h("span", { className: "text-sm text-cedar/60" }, "None")
-            )
-          );
-        }
-
-        function StepSection({ title, steps }) {
-          return h(
-            "section",
-            { className: "mb-5" },
-            h("h3", { className: "mb-2 text-sm font-semibold uppercase text-clay" }, title),
-            h(
-              "ol",
-              { className: "space-y-3" },
-              steps.map((step, index) =>
-                h("li", { key: title + index, className: "rounded-lg bg-white/75 p-4 leading-7 text-cedar" }, h("span", { className: "mr-3 font-semibold text-clay" }, String(index + 1).padStart(2, "0")), step)
-              )
-            )
-          );
-        }
+        function IngredientSection({ title, items }) { return h("section", { className: "mb-5" }, h("h3", { className: "mb-2 text-sm font-semibold uppercase text-clay" }, title), h("div", { className: "flex flex-wrap gap-2" }, items.length ? items.map(i => h("span", { key: i.name, className: "rounded-full bg-white px-3 py-1 text-sm text-cedar" }, i.name + " - " + formatAmount(i.qty, i.unit))) : h("span", { className: "text-sm text-cedar/60" }, "None"))); }
+        function StepSection({ title, steps }) { return h("section", { className: "mb-5" }, h("h3", { className: "mb-2 text-sm font-semibold uppercase text-clay" }, title), h("ol", { className: "space-y-3" }, steps.map((s, idx) => h("li", { key: idx, className: "rounded-lg bg-white/75 p-4 leading-7 text-cedar" }, h("span", { className: "mr-3 font-semibold text-clay" }, String(idx + 1).padStart(2, "0")), s)))); }
 
         function AddDishModal({ form, formError, setForm, onClose, onSubmit }) {
-          function change(field, value) {
-            setForm((current) => Object.assign({}, current, { [field]: value }));
-          }
-
-          const parsedMain = parseIngredients(form.mainIngredients, "main");
-          const parsedPantry = parseIngredients(form.pantryIngredients, "pantry");
-          const parsedTags = parseTags(form.tags);
-          const previewAll = mergeItems(parsedMain.concat(parsedPantry));
-          const previewCalories = previewAll.length ? estimateCalories(previewAll) : 0;
-          const previewCaloriesPerServing = previewCalories ? Math.round(previewCalories / 2) : 0;
-          const previewSubtitle = form.name.trim()
-            ? generateSubtitle(form.name.trim(), parsedMain)
-            : "Auto-generated description will appear here.";
-
-          return h(
-            "div",
-            { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 py-6 backdrop-blur-sm" },
-            h(
-              "form",
-              { onSubmit, className: "max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
-              h(
-                "div",
-                { className: "mb-5 flex items-start justify-between gap-4" },
-                h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "New dish"), h("h2", { className: "text-2xl font-semibold" }, "Add to Menu")),
-                h("button", { type: "button", onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold text-cedar hover:bg-oat" }, "Close")
-              ),
-              h(
-                "div",
-                { className: "grid gap-4 md:grid-cols-[1fr_.8fr]" },
-                h(
-                  "div",
-                  { className: "space-y-4" },
-                  h(Field, { label: "Dish name", value: form.name, onChange: (value) => change("name", value), placeholder: "Mapo Tofu" }),
-                  h(Field, { label: "Tags", value: form.tags, onChange: (value) => change("tags", value), placeholder: "Chinese, Dinner, Spicy" }),
-                  h(TextAreaField, { label: "Main ingredients", value: form.mainIngredients, onChange: (value) => change("mainIngredients", value), rows: 5, hint: "Shown on menu cards. One per line: Name, quantity, unit" }),
-                  h(TextAreaField, { label: "Pantry ingredients", value: form.pantryIngredients, onChange: (value) => change("pantryIngredients", value), rows: 5, hint: "Used for calories, details, and grocery math. One per line: Name, quantity, unit" }),
-                  h(TextAreaField, { label: "Preparation", value: form.preparation, onChange: (value) => change("preparation", value), rows: 4, hint: "One preparation step per line" }),
-                  h(TextAreaField, { label: "Cooking", value: form.cooking, onChange: (value) => change("cooking", value), rows: 4, hint: "One cooking step per line" })
+          const pm = parseIngredients(form.mainIngredients, "main"), pp = parseIngredients(form.pantryIngredients, "pantry"), pt = parseTags(form.tags);
+          return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
+            h("form", { onSubmit, className: "max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
+              h("div", { className: "mb-5 flex items-start justify-between gap-4" }, h("h2", { className: "text-2xl font-semibold" }, "Add to Menu"), h("button", { type: "button", onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold" }, "Close")),
+              h("div", { className: "grid gap-4 md:grid-cols-[1fr_.8fr]" },
+                h("div", { className: "space-y-4" },
+                  h(Field, { label: "Dish name", value: form.name, onChange: (v) => setForm(c => Object.assign({}, c, { name: v })), placeholder: "Mapo Tofu" }),
+                  h(Field, { label: "Tags", value: form.tags, onChange: (v) => setForm(c => Object.assign({}, c, { tags: v })), placeholder: "Chinese, Dinner" }),
+                  h(TextAreaField, { label: "Main ingredients", value: form.mainIngredients, onChange: (v) => setForm(c => Object.assign({}, c, { mainIngredients: v })), rows: 3, hint: "格式：品名, 数量, 单位（一行一个）" }),
+                  h(TextAreaField, { label: "Pantry ingredients", value: form.pantryIngredients, onChange: (v) => setForm(c => Object.assign({}, c, { pantryIngredients: v })), rows: 3, hint: "格式：品名, 数量, 单位（一行一个）" }),
+                  h(TextAreaField, { label: "Preparation", value: form.preparation, onChange: (v) => setForm(c => Object.assign({}, c, { preparation: v })), rows: 3 }),
+                  h(TextAreaField, { label: "Cooking", value: form.cooking, onChange: (v) => setForm(c => Object.assign({}, c, { cooking: v })), rows: 3 })
                 ),
-                h(
-                  "div",
-                  { className: "rounded-lg border border-white/70 bg-white/70 p-4" },
-                  h("p", { className: "text-sm font-medium uppercase text-clay" }, "Generated preview"),
-                  h("h3", { className: "mt-3 text-xl font-semibold" }, form.name.trim() || "Untitled Dish"),
-                  h("p", { className: "mt-2 text-sm leading-6 text-cedar/70" }, previewSubtitle),
-                  h(
-                    "div",
-                    { className: "mt-3 flex flex-wrap gap-2" },
-                    parsedTags.length
-                      ? parsedTags.map((tag) => h("span", { key: "preview-tag-" + tag, className: "rounded-full bg-white px-3 py-1 text-sm text-cedar/70" }, tag))
-                      : h("span", { className: "rounded-full bg-white px-3 py-1 text-sm text-cedar/60" }, "No tags yet")
-                  ),
-                  h("div", { className: "mt-4 rounded-lg bg-cream p-3" }, h("p", { className: "text-sm text-cedar/70" }, "Calories per serving"), h("p", { className: "mt-1 text-2xl font-semibold text-clay" }, previewCaloriesPerServing || "--", previewCaloriesPerServing ? " kcal" : "")),
-                  h(PreviewGroup, { title: "Main", items: mergeItems(parsedMain) }),
-                  h(PreviewGroup, { title: "Pantry", items: mergeItems(parsedPantry) })
+                h("div", { className: "rounded-lg border bg-white/70 p-4 space-y-4" },
+                  h("p", { className: "text-sm font-medium uppercase text-clay" }, "Generated Preview"),
+                  h("h3", { className: "text-xl font-semibold" }, form.name || "Untitled Dish"),
+                  h("div", { className: "flex flex-wrap gap-2" }, pt.map(t => h("span", { key: t, className: "rounded-full bg-white px-3 py-1 text-xs" }, t))),
+                  h("div", { className: "mt-4 space-y-2" }, h("p", { className: "text-sm font-semibold text-cedar" }, "Ingredients List"), pm.concat(pp).map(i => h("p", { key: i.name, className: "text-sm bg-white p-2 rounded" }, i.name + " - " + i.qty + i.unit)))
                 )
               ),
-              formError && h("p", { className: "mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700" }, formError),
-              h("div", { className: "mt-5 flex justify-end gap-3" }, h("button", { type: "button", onClick: onClose, className: "rounded-lg bg-white px-4 py-3 text-sm font-semibold text-cedar hover:bg-oat" }, "Cancel"), h("button", { type: "submit", className: "rounded-lg bg-clay px-4 py-3 text-sm font-semibold text-white hover:bg-cedar" }, "Add Dish"))
+              formError && h("p", { className: "mt-4 text-red-700 font-medium" }, formError),
+              h("div", { className: "mt-5 flex justify-end gap-3" }, h("button", { type: "button", onClick: onClose, className: "px-4 py-2 bg-white rounded-lg" }, "Cancel"), h("button", { type: "submit", className: "px-4 py-2 bg-clay text-white rounded-lg" }, "Add Dish"))
             )
           );
         }
 
-        function PreviewGroup({ title, items }) {
-          return h(
-            "div",
-            { className: "mt-4 space-y-2" },
-            h("p", { className: "text-sm font-semibold text-cedar" }, title),
-            items.length
-              ? items.map((item) => h("p", { key: title + item.name + item.unit, className: "rounded-lg bg-white px-3 py-2 text-sm text-cedar" }, item.name + " - " + formatAmount(item.qty, item.unit)))
-              : h("p", { className: "text-sm leading-6 text-cedar/65" }, "Valid ingredients will preview here.")
-          );
-        }
-
-        function Field({ label, value, onChange, placeholder }) {
-          return h("label", { className: "block" }, h("span", { className: "mb-2 block text-sm font-semibold text-cedar" }, label), h("input", { value, placeholder, onChange: (event) => onChange(event.target.value), className: "w-full rounded-lg border border-cedar/15 bg-white px-3 py-3 text-sm outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/15" }));
-        }
-
-        function TextAreaField({ label, value, onChange, rows, hint }) {
-          return h("label", { className: "block" }, h("span", { className: "mb-2 block text-sm font-semibold text-cedar" }, label), h("textarea", { value, rows, onChange: (event) => onChange(event.target.value), className: "w-full resize-y rounded-lg border border-cedar/15 bg-white px-3 py-3 text-sm leading-6 outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/15" }), h("span", { className: "mt-1 block text-xs text-cedar/60" }, hint));
-        }
-
-        function Stat({ label, value }) {
-          return h("div", { className: "min-w-20 rounded-xl bg-cream px-4 py-3 text-center" }, h("p", { className: "text-2xl font-semibold text-ink" }, value), h("p", { className: "mt-1 text-xs font-medium uppercase text-cedar/60" }, label));
-        }
-
-        function EmptyState() {
-          return h("div", { className: "rounded-lg bg-cream p-6 text-center" }, h("div", { className: "mx-auto mb-4 h-16 w-16 rounded-full border-8 border-oat bg-white shadow-inner" }), h("p", { className: "font-medium" }, "No dishes yet"), h("p", { className: "mt-1 text-sm leading-6 text-cedar/65" }, "Add a menu card to start planning dinner."));
-        }
+        function Field({ label, value, onChange, placeholder }) { return h("label", { className: "block" }, h("span", { className: "mb-1 block text-sm font-semibold text-cedar" }, label), h("input", { value, placeholder, onChange: (e) => onChange(e.target.value), className: "w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-clay" })); }
+        function TextAreaField({ label, value, onChange, rows, hint }) { return h("label", { className: "block" }, h("span", { className: "mb-1 block text-sm font-semibold text-cedar" }, label), h("textarea", { value, rows, onChange: (e) => onChange(e.target.value), className: "w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-clay" }), h("span", { className: "text-xs text-cedar/60 mt-0.5 block" }, hint)); }
+        function Stat({ label, value }) { return h("div", { className: "min-w-20 rounded-xl bg-cream px-4 py-3 text-center" }, h("p", { className: "text-2xl font-semibold text-ink" }, value), h("p", { className: "mt-1 text-xs font-medium uppercase text-cedar/60" }, label)); }
 
         ReactDOM.createRoot(document.getElementById("root")).render(h(App));
       })();
