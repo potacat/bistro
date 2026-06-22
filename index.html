@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Family Menu V2.2 (Cooking History Log)</title>
+    <title>Family Menu V2.2 (Pure Cloud & Secure)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
@@ -58,7 +58,7 @@
         const { useEffect, useMemo, useState } = React;
 
         // =========================================================
-        // 🔴 CRITICAL CONFIGURATION AREA: FILL IN YOUR CREDS 🔴
+        // 🔴 CRITICAL CONFIGURATION AREA: SYNC YOUR CREDS 🔴
         // =========================================================
         const SUPABASE_URL = 'https://fawxcdheypnfnlxzcwrl.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_0ymWg7r2cAB-A0fQ7Hm4lQ_tV0Mcx1_';
@@ -73,11 +73,6 @@
           pepper: "Green Pepper", "青椒": "Green Pepper", "pork loin": "Pork Loin", pork: "Pork Loin", "里脊肉": "Pork Loin", tofu: "Tofu", "豆腐": "Tofu", "hou zhu sauce": "Hou Zhu Sauce",
           "houzhu sauce": "Hou Zhu Sauce", "侯柱酱": "Hou Zhu Sauce",
         };
-
-        const baseDishes = [
-          { id: 1, name: "Tomato Egg Stir-Fry", subtitle: "Soft eggs and bright tomato with a scallion finish", time: "12 min", calories: 305, source: "Built-in Recipe (Read Only)", tags: ["Chinese", "Dinner", "Quick"], accent: ["#e85038", "#ffd36f", "#4f9b67"], mainIngredients: [{name: "Tomato", qty: 2, unit: "pcs", role:"main"}, {name: "Egg", qty: 3, unit: "pcs", role:"main"}], pantryIngredients: [{name: "Scallion", qty: 1, unit: "stalk", role:"pantry"}, {name: "Oil", qty: 1, unit: "tsp", role:"pantry"}, {name: "Salt", qty: 0.25, unit: "tsp", role:"pantry"}], preparation: ["Cut tomatoes into wedges and slice the scallion.", "Beat the eggs with a small pinch of salt until smooth."], cooking: ["Scramble the eggs in a hot pan until barely set.", "Cook tomato wedges until they release juice.", "Return eggs, fold gently, and finish with scallion."], custom: false },
-          { id: 2, name: "Pepper Pork Strips", subtitle: "Green pepper with tender pork loin", time: "18 min", calories: 450, source: "Built-in Recipe (Read Only)", tags: ["Chinese", "Dinner", "Pork"], accent: ["#4f9b67", "#b66a4b", "#e7c07b"], mainIngredients: [{name: "Green Pepper", qty: 2, unit: "pcs", role:"main"}, {name: "Pork Loin", qty: 250, unit: "g", role:"main"}], pantryIngredients: [{name: "Scallion", qty: 1, unit: "stalk", role:"pantry"}, {name: "Garlic", qty: 1, unit: "clove", role:"pantry"}, {name: "Oil", qty: 1, unit: "tsp", role:"pantry"}, {name: "Salt", qty: 0.25, unit: "tsp", role:"pantry"}], preparation: ["Slice pork loin into thin strips and cut green peppers.", "Season pork lightly with salt."], cooking: ["Sear the pork quickly over high heat, set aside.", "Stir-fry green pepper strips until crisp-tender.", "Return pork, toss with scallion and garlic."], custom: false }
-        ];
 
         const emptyForm = { name: "", tags: "Chinese, Dinner", mainIngredients: "Tofu, 300, g\nHou Zhu Sauce, 1, tbsp", pantryIngredients: "Scallion, 1, stalk\nGarlic, 2, clove\nOil, 1, tsp", preparation: "Pat the tofu dry.\nSlice scallion.", cooking: "Sear tofu until golden.\nAdd sauce and simmer." };
         const emptyInventoryForm = { name: "", qty: "", unit: "g" };
@@ -105,11 +100,11 @@
           const [customDishes, setCustomDishes] = useState([]);
           const [inventory, setInventory] = useState([]);
           const [calorieLookup, setCalorieLookup] = useState({});
-          const [cookingHistory, setCookingHistory] = useState([]); // 🚀 Cooking History Cloud State
+          const [cookingHistory, setCookingHistory] = useState([]); 
           
           const [orders, setOrders] = useState([]);
           const [selectedDish, setSelectedDish] = useState(null);
-          const [loggingDish, setLoggingDish] = useState(null); // 🚀 Active dish being logged
+          const [loggingDish, setLoggingDish] = useState(null); 
           const [isFormOpen, setIsFormOpen] = useState(false);
           const [form, setForm] = useState(emptyForm);
           const [formError, setFormError] = useState("");
@@ -150,10 +145,8 @@
                 const { data: inv } = await supabase.from('pantry_inventory').select('*');
                 if (inv) setInventory(inv.map(i => ({ name: i.name, qty: Number(i.qty), unit: i.unit, role: 'pantry' })));
 
-                // 🚀 Fetch cooking history records from cloud
                 const { data: hist } = await supabase.from('cooking_history').select('*');
                 if (hist) setCookingHistory(hist.map(h => ({ id: h.id, recipe_id: Number(h.recipe_id), rating: Number(h.rating), notes: h.notes, cooking_date: h.cooking_date })));
-
               } catch (e) {
                 console.error(e);
               } finally {
@@ -179,7 +172,6 @@
             }, 0);
           };
 
-          // 🚀 Hardcore Trimmed-Mean Scoring Logic
           const getRecipeStats = (recipeId) => {
             const matchLogs = cookingHistory.filter(h => Number(h.recipe_id) === Number(recipeId));
             const totalLogs = matchLogs.length;
@@ -189,15 +181,15 @@
             if (totalLogs === 1) return { avg: roundQty(scores[0]), count: 1 };
             if (totalLogs === 2) return { avg: roundQty((scores[0] + scores[1]) / 2), count: 2 };
             
-            // 3 or more: drop one min and one max
             const sorted = [...scores].sort((a, b) => a - b);
-            sorted.pop();   // drop max
-            sorted.shift(); // drop min
+            sorted.pop();   
+            sorted.shift(); 
             const sum = sorted.reduce((a, b) => a + b, 0);
             return { avg: roundQty(sum / sorted.length), count: totalLogs };
           };
 
-          const dishes = useMemo(() => baseDishes.concat(customDishes).map(d => {
+          // 🚀 Cleaned: Everything loads directly from 100% unified cloud entries
+          const dishes = useMemo(() => customDishes.map(d => {
             const all = (d.mainIngredients || []).concat(d.pantryIngredients || []);
             const stats = getRecipeStats(d.id);
             return Object.assign({}, d, { 
@@ -300,7 +292,6 @@
             }
           }
 
-          // 🚀 云端关系型写入：保存新的历史烹饪日志记录
           async function cloudAddCookingLog(recipeId, rating, notes, cookingDate) {
             if (window.confirm("Are you sure you want to log this cooking history? ✨")) {
               const { data, error } = await supabase.from('cooking_history').insert([{
@@ -379,7 +370,7 @@
         }
 
         // ==========================================
-        // 🧱 DishCard Component (Added Star Rating UI & Log Button)
+        // 🧱 DishCard Component (Pure English UI)
         // ==========================================
         function DishCard({ dish, onAdd, onOpen, onLogClick }) {
           const displayIngredients = dish.mainIngredients || []; const caloriesPerServing = Math.round((dish.calories || 0) / 2);
@@ -414,7 +405,7 @@
         }
 
         // ==========================================
-        // 🧱 RecipeModal Component (Added Logs Review list & Log link)
+        // 🧱 RecipeModal Component (Pure English UI)
         // ==========================================
         function RecipeModal({ dish, historyLogs, onClose, onDelete, onUpdate, onLogClick }) {
           const [isEditing, setIsEditing] = useState(false);
@@ -452,21 +443,20 @@
                   h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "Recipe details"), h("h2", { className: "text-3xl font-semibold text-ink" }, dish.name), h("p", { className: "mt-1 text-sm text-cedar/65" }, dish.source)),
                   h("div", { className: "flex flex-wrap gap-2 shrink-0" },
                     h("button", { onClick: onLogClick, className: "rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700" }, "📝 Log Cooking"),
-                    dish.custom !== false ? h("button", { onClick: enterEditMode, className: "rounded-lg bg-clay px-4 py-2 text-sm font-semibold text-white hover:bg-cedar" }, "✏️ Edit Recipe") : h("span", { className: "rounded-lg bg-oat px-3 py-2 text-xs font-semibold text-cedar/65" }, "🔒 Built-in Recipe"),
-                    dish.custom !== false && h("button", { onClick: handleDeleteClick, className: "rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800" }, "🗑️ Delete"),
+                    h("button", { onClick: enterEditMode, className: "rounded-lg bg-clay px-4 py-2 text-sm font-semibold text-white hover:bg-cedar" }, "✏️ Edit Recipe"),
+                    h("button", { onClick: handleDeleteClick, className: "rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800" }, "🗑️ Delete"),
                     h("button", { onClick: onClose, className: "rounded-lg bg-white border border-cedar/20 px-4 py-2 text-sm font-semibold text-cedar hover:bg-oat" }, "Close")
                   )
                 ),
                 h(IngredientSection, { title: "Main Ingredients", items: dish.mainIngredients || [] }), h(IngredientSection, { title: "Pantry Ingredients", items: dish.pantryIngredients || [] }),
                 h(StepSection, { title: "Preparation", steps: dish.preparation || [] }), h(StepSection, { title: "Cooking", steps: dish.cooking || [] }),
                 
-                // 🚀 History timeline inside Modal
-                h("section", { className: "mt-6 border-top border-cedar/10 pt-4" },
+                h("section", { className: "mt-6 border-t border-cedar/10 pt-4" },
                   h("h3", { className: "mb-3 text-sm font-semibold uppercase text-clay" }, "Cooking Logs History"),
                   historyLogs.length === 0 ? h("p", { className: "text-sm text-cedar/65 italic" }, "No logs recorded yet for this meal. Be the first to cook it!") : 
                   h("div", { className: "space-y-2 max-h-40 overflow-auto pr-1" },
                     historyLogs.map(l => h("div", { key: l.id, className: "bg-white p-3 rounded-lg border border-cedar/5 text-sm" },
-                      h("div", { className: "flex justify-between font-bold text-ink" }, h("span", null, "⭐ ".repeat(l.rating)), h("span", { className: "text-xs font-medium text-cedar/60" }, l.cooking_date)),
+                      h("div", { className: "flex justify-between font-bold text-ink" }, h("span", null, "⭐ ".repeat(Math.max(0, Math.floor(Number(l.rating) || 5)))), h("span", { className: "text-xs font-medium text-cedar/60" }, l.cooking_date)),
                       l.notes && h("p", { className: "mt-1.5 text-cedar/80 text-xs leading-5" }, l.notes)
                     ))
                   )
@@ -486,7 +476,7 @@
                     h(TextAreaField, { label: "Preparation Steps (one per line)", value: editPrep, onChange: setEditPrep, rows: 3 }), h(TextAreaField, { label: "Cooking Steps (one per line)", value: editCook, onChange: setEditCook, rows: 3 })
                   ),
                   h("div", { className: "space-y-4" },
-                    h(TextAreaField, { label: "Main Ingredients (Name, Qty, Unit)", value: editMain, onChange: setEditMain, rows: 4, hint: "e.g., Tomato, 2, pcs" }), h(TextAreaField, { label: "Pantry Ingredients (Name, Qty, Unit)", value: editPantry, onChange: setEditPantry, rows: 4, hint: "e.g., Oil, 1, tsp" })
+                    h(TextAreaField, { label: "Main Ingredients (Name, Qty, Unit)", value: editMain, onChange: setEditMain, rows: 4, hint: "Format: Name, Qty, Unit (one per line)" }), h(TextAreaField, { label: "Pantry Ingredients (Name, Qty, Unit)", value: editPantry, onChange: setEditPantry, rows: 4, hint: "Format: Name, Qty, Unit (one per line)" })
                   )
                 ),
                 errorMsg && h("p", { className: "text-sm text-red-600 font-semibold" }, errorMsg)
@@ -496,12 +486,10 @@
         }
 
         // ==========================================
-        // 🚀 NEW COMPONENT: LogCookingModal (English)
+        // 🧱 LogCookingModal Component (Pure English UI)
         // ==========================================
         function LogCookingModal({ dish, onClose, onSaveLog }) {
-          const [rating, setRating] = useState(5);
-          const [notes, setNotes] = useState("");
-          const [cookingDate, setCookingDate] = useState("Tonight");
+          const [rating, setRating] = useState(5); const [notes, setNotes] = useState(""); const [cookingDate, setCookingDate] = useState("Tonight");
 
           async function handleSubmit(e) {
             e.preventDefault();
@@ -511,10 +499,7 @@
 
           return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-sm" },
             h("form", { onSubmit: handleSubmit, className: "w-full max-w-md rounded-xl bg-cream p-6 shadow-soft border border-cedar/10 space-y-4" },
-              h("div", null, 
-                h("p", { className: "text-xs font-semibold uppercase tracking-wider text-clay" }, "Dinner Tracker"),
-                h("h2", { className: "text-2xl font-bold text-ink" }, `Log cooking for ${dish.name}`)
-              ),
+              h("div", null, h("p", { className: "text-xs font-semibold uppercase tracking-wider text-clay" }, "Dinner Tracker"), h("h2", { className: "text-2xl font-bold text-ink" }, `Log cooking for ${dish.name}`)),
               h("label", { className: "block" },
                 h("span", { className: "block text-sm font-semibold text-cedar mb-1" }, "Score Rating (1-5 Stars)"),
                 h("select", { value: rating, onChange: (e) => setRating(Number(e.target.value)), className: "w-full rounded-lg bg-white px-3 py-2 text-sm outline-none border border-cedar/10" },
