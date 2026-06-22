@@ -60,8 +60,8 @@
         // =========================================================
         // 🔴 CRITICAL CONFIGURATION AREA: SYNC YOUR CREDS 🔴
         // =========================================================
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const SUPABASE_URL = 'https://fawxcdheypnfnlxzcwrl.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_0ymWg7r2cAB-A0fQ7Hm4lQ_tV0Mcx1_';
         const FAMILY_EMAIL = 'ourhome@menu.com'; 
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -73,11 +73,6 @@
           pepper: "Green Pepper", "青椒": "Green Pepper", "pork loin": "Pork Loin", pork: "Pork Loin", "里脊肉": "Pork Loin", tofu: "Tofu", "豆腐": "Tofu", "hou zhu sauce": "Hou Zhu Sauce",
           "houzhu sauce": "Hou Zhu Sauce", "侯柱酱": "Hou Zhu Sauce",
         };
-
-        const baseDishes = [
-          { id: 1, name: "Tomato Egg Stir-Fry", subtitle: "Soft eggs and bright tomato with a scallion finish", time: "12 min", calories: 305, source: "Built-in Recipe (Read Only)", tags: ["Chinese", "Dinner", "Quick"], accent: ["#e85038", "#ffd36f", "#4f9b67"], mainIngredients: [{name: "Tomato", qty: 2, unit: "pcs", role:"main"}, {name: "Egg", qty: 3, unit: "pcs", role:"main"}], pantryIngredients: [{name: "Scallion", qty: 1, unit: "stalk", role:"pantry"}, {name: "Oil", qty: 1, unit: "tsp", role:"pantry"}, {name: "Salt", qty: 0.25, unit: "tsp", role:"pantry"}], preparation: ["Cut tomatoes into wedges and slice the scallion.", "Beat the eggs with a small pinch of salt until smooth."], cooking: ["Scramble the eggs in a hot pan until barely set.", "Cook tomato wedges until they release juice.", "Return eggs, fold gently, and finish with scallion."], custom: false },
-          { id: 2, name: "Pepper Pork Strips", subtitle: "Green pepper with tender pork loin", time: "18 min", calories: 450, source: "Built-in Recipe (Read Only)", tags: ["Chinese", "Dinner", "Pork"], accent: ["#4f9b67", "#b66a4b", "#e7c07b"], mainIngredients: [{name: "Green Pepper", qty: 2, unit: "pcs", role:"main"}, {name: "Pork Loin", qty: 250, unit: "g", role:"main"}], pantryIngredients: [{name: "Scallion", qty: 1, unit: "stalk", role:"pantry"}, {name: "Garlic", qty: 1, unit: "clove", role:"pantry"}, {name: "Oil", qty: 1, unit: "tsp", role:"pantry"}, {name: "Salt", qty: 0.25, unit: "tsp", role:"pantry"}], preparation: ["Slice pork loin into thin strips and cut green peppers.", "Season pork lightly with salt."], cooking: ["Sear the pork quickly over high heat, set aside.", "Stir-fry green pepper strips until crisp-tender.", "Return pork, toss with scallion and garlic."], custom: false }
-        ];
 
         const emptyForm = { name: "", tags: "Chinese, Dinner", mainIngredients: "Tofu, 300, g\nHou Zhu Sauce, 1, tbsp", pantryIngredients: "Scallion, 1, stalk\nGarlic, 2, clove\nOil, 1, tsp", preparation: "Pat the tofu dry.\nSlice scallion.", cooking: "Sear tofu until golden.\nAdd sauce and simmer." };
         const emptyInventoryForm = { name: "", qty: "", unit: "g" };
@@ -96,7 +91,6 @@
         function parseIngredients(text, role) { return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const p = l.split(",").map(part => part.trim()); if (p.length < 3) return null; const q = Number(p[1]); if (!p[0] || !Number.isFinite(q) || q <= 0 || !p[2]) return null; return ingredient(p[0], q, p[2], role); }).filter(Boolean); }
         function generateSubtitle(name, ingredients) { const names = ingredients.slice(0, 3).map(item => item.name); if (names.length === 0) return "A simple home-style dish for two"; const last = names.pop(); return "Home-style " + name.toLowerCase() + (names.length ? " with " + names.join(", ") + " and " : " with ") + last; }
 
-        // 🛡️ Safe array parser helper to guarantee data types never break React
         function ensureArray(val) {
           if (Array.isArray(val)) return val;
           if (typeof val === 'string') return val.split('\n').map(l => l.trim()).filter(Boolean);
@@ -147,15 +141,7 @@
                 const { data: rec } = await supabase.from('recipes').select('*, recipe_ingredients(*)');
                 if (rec) {
                   const mappedDishes = rec.map(r => ({
-                    id: Number(r.id), 
-                    name: r.name, 
-                    subtitle: r.subtitle, 
-                    time: r.time_estimate, 
-                    tags: ensureArray(r.tags), 
-                    accent: ensureArray(r.accent).length >= 3 ? r.accent : ["#d78a55", "#8fbc8f", "#f0c36a"], 
-                    preparation: ensureArray(r.preparation), 
-                    cooking: ensureArray(r.cooking), 
-                    custom: r.is_custom,
+                    id: Number(r.id), name: r.name, subtitle: r.subtitle, time: r.time_estimate, tags: ensureArray(r.tags), accent: ensureArray(r.accent).length >= 3 ? r.accent : ["#d78a55", "#8fbc8f", "#f0c36a"], preparation: ensureArray(r.preparation), cooking: ensureArray(r.cooking), custom: r.is_custom,
                     mainIngredients: Array.isArray(r.recipe_ingredients) ? r.recipe_ingredients.filter(i => i.role === 'main').map(i => ({ name: i.name, qty: Number(i.qty), unit: i.unit, role: 'main' })) : [],
                     pantryIngredients: Array.isArray(r.recipe_ingredients) ? r.recipe_ingredients.filter(i => i.role === 'pantry').map(i => ({ name: i.name, qty: Number(i.qty), unit: i.unit, role: 'pantry' })) : []
                   }));
@@ -326,15 +312,22 @@
             return false;
           }
 
+          // 🛡️ Upgraded: Sealed try/catch wrapper on Upsert operation to protect run execution context
           async function addInventory(event) {
-            event.preventDefault(); const qty = Number(inventoryForm.qty); const cName = canonicalName(inventoryForm.name); const normUnit = normalizeUnit(inventoryForm.unit);
+            event.preventDefault(); 
+            const qty = Number(inventoryForm.qty); 
+            const cName = canonicalName(inventoryForm.name); 
+            const normUnit = normalizeUnit(inventoryForm.unit);
             if (!cName || !Number.isFinite(qty) || qty <= 0) return;
-            await supabase.from('pantry_inventory').insert([{ name: cName, qty, unit: normUnit }]).select().single()
-              .catch(async () => await supabase.from('pantry_inventory').update({ qty, unit: normUnit }).eq('name', cName));
-            
-            const { data: refreshed } = await supabase.from('pantry_inventory').select('*');
-            if (refreshed) setInventory(refreshed.map(i => ({ name: i.name, qty: Number(i.qty), unit: i.unit, role: 'pantry' })));
-            setInventoryForm(emptyInventoryForm);
+
+            try {
+              await supabase.from('pantry_inventory').upsert({ name: cName, qty, unit: normUnit }, { onConflict: 'name' });
+              const { data: refreshed } = await supabase.from('pantry_inventory').select('*');
+              if (refreshed) setInventory(refreshed.map(i => ({ name: i.name, qty: Number(i.qty), unit: i.unit, role: 'pantry' })));
+              setInventoryForm(emptyInventoryForm);
+            } catch (e) {
+              console.error(e);
+            }
           }
 
           async function removeInventoryItem(name) {
@@ -388,9 +381,6 @@
           );
         }
 
-        // ==========================================
-        // 🧱 DishCard Component (Pure English UI)
-        // ==========================================
         function DishCard({ dish, onAdd, onOpen, onLogClick }) {
           const displayIngredients = ensureArray(dish.mainIngredients); const caloriesPerServing = Math.round((dish.calories || 0) / 2);
           return h("article", { className: "overflow-hidden rounded-lg border border-white/70 bg-white/80 shadow-soft flex flex-col justify-between" },
@@ -423,9 +413,6 @@
           );
         }
 
-        // ==========================================
-        // 🧱 RecipeModal Component (Safely Typed)
-        // ==========================================
         function RecipeModal({ dish, historyLogs, onClose, onDelete, onUpdate, onLogClick }) {
           const [isEditing, setIsEditing] = useState(false);
           const [editName, setEditName] = useState(""); const [editTags, setEditTags] = useState(""); const [editMain, setEditMain] = useState(""); const [editPantry, setEditPantry] = useState(""); const [editPrep, setEditPrep] = useState(""); const [editCook, setEditCook] = useState(""); const [errorMsg, setErrorMsg] = useState("");
@@ -509,9 +496,6 @@
           );
         }
 
-        // ==========================================
-        // 🧱 LogCookingModal Component (Pure English UI)
-        // ==========================================
         function LogCookingModal({ dish, onClose, onSaveLog }) {
           const [rating, setRating] = useState(5); const [notes, setNotes] = useState(""); const [cookingDate, setCookingDate] = useState("Tonight");
 
@@ -540,9 +524,6 @@
           );
         }
 
-        // ==========================================
-        // 🧱 Standard Layout Components (Pure English UI)
-        // ==========================================
         function Sidebar(props) { return h("aside", { className: "space-y-4" }, h(CookList, props), h(InventoryPanel, props), h(GroceryPanel, props)); }
         function CookList({ orderItems, onClear, onUpdate, onRemove }) {
           return h("div", { className: "space-y-4" },
