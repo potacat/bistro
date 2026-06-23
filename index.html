@@ -84,7 +84,7 @@
       }
 
       // ==========================================
-      // 🧱 CORE MODULE SUB-COMPONENTS
+      // 🧱 CORE SUB-COMPONENTS ENGINE
       // ==========================================
       function IngredientRepeaterRow({ row, onChange, onRemove, masterIngredients }) {
         const suggestions = useMemo(() => {
@@ -125,8 +125,14 @@
           }
         }, [activeMatchedIngredient]);
 
+        // Defensive guard to halt native form reloads prior to authentication challenges
+        const handleLocalSubmit = (e) => {
+          e.preventDefault();
+          onAddInventory();
+        };
+
         return h("div", { className: "bg-white/80 border p-6 rounded-xl shadow-soft space-y-6 animate-fade-in" },
-          h("form", { onSubmit: onAddInventory, className: "grid grid-cols-[1fr_100px_90px_100px] gap-3 items-end pb-4" },
+          h("form", { onSubmit: handleLocalSubmit, className: "grid grid-cols-[1fr_100px_90px_100px] gap-3 items-end pb-4" },
             h("div", { className: "relative" },
               h("span", { className: "text-xs font-bold block mb-1 text-cedar/75" }, "Ingredient Search"),
               h("input", { value: inventoryForm.name, placeholder: "Type name...", onChange: (e) => { setInventoryForm(Object.assign({}, inventoryForm, { name: e.target.value })); setShowSuggest(true); }, className: "w-full p-2 rounded bg-cream text-sm outline-none" }),
@@ -153,8 +159,8 @@
                 h("button", { onClick: onCancelInlineEdit, type: "button", className: "text-xs text-cedar/65" }, "Cancel")
               ) : h("div", { className: "flex gap-3 items-center shrink-0" },
                 h("span", { className: "font-bold text-sm text-clay" }, `${item.qty} ${item.unit}`),
-                h("button", { onClick: () => onEditInventory(item), type: "button", className: "text-xs text-ink underline" }, "Edit"),
-                h("button", { onClick: () => onRemoveInventory(item.id), type: "button", className: "text-xs text-red-600 font-medium" }, "Remove")
+                h("button", { onClick: onEditInventory, type: "button", className: "text-xs text-ink underline" }, "Edit"),
+                h("button", { onClick: onRemoveInventory, type: "button", className: "text-xs text-red-600 font-medium" }, "Remove")
               )
             ))
           )
@@ -163,8 +169,14 @@
 
       function AddDishModal({ formName, setFormName, formOriginalName, setFormOriginalName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose, onSubmit }) {
         const addLine = () => setFormIngredients(c => ensureArray(c).concat({ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }));
+        
+        const handleLocalSubmit = (e) => {
+          e.preventDefault();
+          onSubmit();
+        };
+
         return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
-          h("form", { onSubmit, className: "max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
+          h("form", { onSubmit: handleLocalSubmit, className: "max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
             h("div", { className: "mb-5 flex items-center justify-between" }, h("h2", { className: "text-2xl font-semibold" }, "Add Custom Recipe"), h("button", { type: "button", onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold" }, "Close")),
             h("div", { className: "grid gap-4 md:grid-cols-2" },
               h("div", { className: "space-y-4" },
@@ -249,6 +261,11 @@
           setIsEditing(true);
         }
 
+        const handleLocalUpdate = (e) => {
+          e.preventDefault();
+          onUpdate(dish.id, { name: editName, original_name: editOriginalName, subtitle: generateSubtitle(editName, editRows.map(er => ({ name: er.searchQuery }))), tags: parseTags(editTags), preparation: editPrep.split('\n').filter(Boolean), cooking: editCook.split('\n').filter(Boolean) }, editRows);
+        };
+
         return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
           h("div", { className: "max-h-[88vh] w-full max-w-3xl overflow-auto rounded-xl bg-cream p-6 shadow-soft" },
             !isEditing ? h("div", null,
@@ -271,7 +288,7 @@
                 )
               )
             ) : 
-            h("form", { onSubmit: (e) => { e.preventDefault(); onUpdate(dish.id, { name: editName, original_name: editOriginalName, subtitle: generateSubtitle(editName, editRows.map(er => ({ name: er.searchQuery }))), tags: parseTags(editTags), preparation: editPrep.split('\n').filter(Boolean), cooking: editCook.split('\n').filter(Boolean) }, editRows); }, className: "space-y-4" },
+            h("form", { onSubmit: handleLocalUpdate, className: "space-y-4" },
               h("div", { className: "flex items-center justify-between border-b pb-3" },
                 h("h2", { className: "text-2xl font-bold" }, "Modify Recipe Entries"),
                 h("div", { className: "flex gap-2" },
@@ -311,7 +328,6 @@
         );
       }
 
-      // 📌 Restored: CheckoutModal to fix high-level boot loader freezing loops
       function CheckoutModal({ onClose, onConfirm }) {
         const [name, setName] = useState(""); const [note, setNote] = useState("");
         return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-sm" },
@@ -364,6 +380,9 @@
           coveredList.length > 0 && h("div", { className: "mt-4 bg-white/40 p-2 rounded" }, h("p", { className: "text-xs font-bold opacity-60 mb-1" }, "Covered items in stock:"), h("div", { className: "flex flex-wrap gap-1" }, coveredList.map(c => h("span", { key: c.name, className: "bg-cream px-2 py-0.5 rounded text-xs opacity-75" }, c.name))))
         );
       }
+
+      function IngredientSection({ title, items }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-1.5" }, title), h("div", { className: "flex flex-wrap gap-1.5" }, items.length ? items.map(i => h("span", { key: i.name, className: "bg-white border px-2.5 py-1 rounded-full text-xs" }, `${i.name}: ${formatAmount(i.qty, i.unit)}`)) : h("span", { className: "text-xs opacity-50" }, "None"))); }
+      function StepSection({ title, steps }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-2" }, title), h("ol", { className: "space-y-2" }, steps.map((s, idx) => h("li", { key: idx, className: "bg-white/70 border p-3 rounded-lg text-xs leading-relaxed" }, h("span", { className: "font-bold text-clay mr-2" }, String(idx+1).padStart(2, '0')), s)))); }
 
       function App() {
         const [session, setSession] = useState(null);
@@ -520,8 +539,7 @@
 
         const servings = orderItems.reduce((sum, item) => sum + item.count * 2, 0);
 
-        async function handleSaveNewRecipe(e) {
-          if (e) e.preventDefault();
+        async function handleSaveNewRecipe() {
           const name = formName.trim(); const originalName = formOriginalName.trim();
           if (!name || formIngredients.length === 0) { setFormError("Recipe name and ingredients are required!"); return; }
           const prepArr = formPrep.split('\n').map(l => l.trim()).filter(Boolean);
@@ -547,7 +565,7 @@
         function handleUpdateRecipeSecure(id, meta, incomingRows) {
           await supabase.from('recipes').update({ name: meta.name, original_name: meta.original_name, subtitle: meta.subtitle, tags: meta.tags, preparation: meta.preparation, cooking: meta.cooking }).eq('id', id);
           await supabase.from('recipe_ingredients').delete().eq('recipe_id', id);
-          const activeLinks = resolveIngredientsPayload(incomingRows).then(activeLinks => {
+          resolveIngredientsPayload(incomingRows).then(activeLinks => {
             const junctionRows = activeLinks.map(link => ({ recipe_id: id, ingredient_id: link.ingredient_id, qty: link.qty }));
             supabase.from('recipe_ingredients').insert(junctionRows).then(() => bootstrapCloudBistro());
           });
@@ -573,8 +591,7 @@
           });
         }
 
-        function handleAddInventorySecure(e) {
-          if (e) e.preventDefault();
+        function handleAddInventorySecure() {
           const inputName = titleCase(inventoryForm.name.trim());
           if (!inputName || Number(inventoryForm.qty) <= 0) { alert("Invalid name or quantity level entry."); return; }
 
@@ -601,6 +618,13 @@
           });
         }
 
+        async function commitInlineInventoryEdit() {
+          if (Number(editingInventoryQty) < 0) return;
+          await supabase.from('pantry_inventory').update({ qty: Number(editingInventoryQty) }).eq('id', editingInventoryId);
+          setInventory(c => ensureArray(c).map(i => i.id === editingInventoryId ? Object.assign({}, i, { qty: Number(editingInventoryQty) }) : i));
+          setEditingInventoryId(null);
+        }
+
         return h("main", { className: "mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10" },
           h("header", { className: "flex flex-col gap-5 border-b border-cedar/10 pb-6 lg:flex-row lg:items-end lg:justify-between" },
             h("div", { className: "max-w-2xl" },
@@ -624,7 +648,7 @@
               ),
               viewMode === "menu" ? h("div", { className: "grid gap-4 sm:grid-cols-2" },
                 ensureArray(visibleDishes).map(dish => h(DishCard, { key: dish.id, dish, onAdd: () => setOrders(c => c.find(o => o.id === dish.id) ? c.map(o => o.id === dish.id ? { id: o.id, count: o.count + 1 } : o) : c.concat({ id: dish.id, count: 1 })), onOpen: () => setSelectedDish(dish), onLogClick: () => executeSecureAction(() => setLoggingDish(dish)) }))
-              ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: (e) => executeSecureAction(() => handleAddInventorySecure(e)), onRemoveInventory: (id) => executeSecureAction(() => handleRemoveInventorySecure(id)), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
+              ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: () => executeSecureAction(handleAddInventorySecure), onRemoveInventory: (id) => executeSecureAction(() => handleRemoveInventorySecure(id)), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
             ),
             h(Sidebar, { viewMode, orderItems, requiredList, groceryList, coveredList, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => ensureArray(c).map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true) })
           ),
