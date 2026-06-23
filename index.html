@@ -55,7 +55,6 @@
           "houzhu sauce": "Hou Zhu Sauce", "侯柱酱": "Hou Zhu Sauce",
         };
 
-        const emptyForm = { name: "", tags: "Chinese, Dinner", mainIngredients: "Tofu, 300, g\nHou Zhu Sauce, 1, tbsp", pantryIngredients: "Scallion, 1, stalk\nGarlic, 2, clove\nOil, 1, tsp", preparation: "Pat the tofu dry.\nSlice scallion.", cooking: "Sear tofu until golden.\nAdd sauce and simmer." };
         const emptyInventoryForm = { name: "", qty: "", unit: "g" };
 
         function titleCase(text) { return (text || "").trim().toLowerCase().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "); }
@@ -65,7 +64,6 @@
           const ua = { piece: "pcs", pieces: "pcs", pc: "pcs", 个: "pcs", gram: "g", grams: "g", 克: "g", stalks: "stalk", 根: "stalk", cloves: "clove", 瓣: "clove", tablespoon: "tbsp", tablespoons: "tbsp", tbsp: "tbsp", teaspoon: "tsp", teaspoons: "tsp", tsp: "tsp" };
           return ua[v] || v || "unit";
         }
-        function ingredient(name, qty, unit, role) { return { name: canonicalName(name), qty: Number(qty), unit: normalizeUnit(unit), role: role || "main" }; }
         function roundQty(qty) { return Math.round(qty * 100) / 100; }
         function formatAmount(qty, unit) { const r = roundQty(Number(qty)); return (Number.isInteger(r) ? r : r.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")) + " " + unit; }
         function parseTags(text) { return Array.from(new Set((text || "").split(",").map(t => titleCase(t)).filter(Boolean))); }
@@ -240,7 +238,7 @@
             const name = formName.trim();
             const prepArr = formPrep.split('\n').map(l => l.trim()).filter(Boolean);
             const cookArr = formCook.split('\n').map(l => l.trim()).filter(Boolean);
-            if (!name || formIngredients.length === 0) { setFormError("Missing crucial recipe information values."); return; }
+            if (!name || formIngredients.length === 0) { setFormError("Please append at least one dynamic ingredient row."); return; }
 
             try {
               const ingredientLinks = await resolveIngredientsPayload(formIngredients);
@@ -372,7 +370,7 @@
         }
 
         // ==========================================
-        // 🧱 NESTED SUB-COMPONENTS ENGINE BLOCK
+        // 🧱 STRUCTURAL COMPONENTS SECTOR
         // ==========================================
         function IngredientRepeaterRow({ row, onChange, onRemove, masterIngredients }) {
           const suggestions = useMemo(() => {
@@ -401,6 +399,31 @@
               h("option", { value: "main" }, "Main"), h("option", { value: "pantry" }, "Pantry")
             ),
             h("button", { type: "button", onClick: onRemove, className: "text-red-600 font-bold px-2 text-sm" }, "×")
+          );
+        }
+
+        function AddDishModal({ formName, setFormName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose, onSubmit }) {
+          const addLine = () => setFormIngredients(c => c.concat({ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }));
+          return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
+            h("form", { onSubmit, className: "max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
+              h("div", { className: "mb-5 flex items-center justify-between" }, h("h2", { className: "text-2xl font-semibold" }, "Add Custom Recipe"), h("button", { type: "button", onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold" }, "Close")),
+              h("div", { className: "grid gap-4 md:grid-cols-2" },
+                h("div", { className: "space-y-4" },
+                  h(Field, { label: "Recipe Name", value: formName, onChange: setFormName, placeholder: "e.g., General Tso Chicken" }),
+                  h(Field, { label: "Category Tags", value: formTags, onChange: setFormTags }),
+                  h(TextAreaField, { label: "Preparation Steps", value: formPrep, onChange: setFormPrep, rows: 3 }),
+                  h(TextAreaField, { label: "Cooking Steps", value: formCook, onChange: setFormCook, rows: 3 })
+                ),
+                h("div", { className: "space-y-3" },
+                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Ingredients Allocation Panel"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
+                  h("div", { className: "space-y-2 max-h-72 overflow-auto pr-1" },
+                    formIngredients.map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setFormIngredients(c => c.map((r, i) => i === idx ? updated : r)), onRemove: () => setFormIngredients(c => c.filter((_, i) => i !== idx)) }))
+                  )
+                )
+              ),
+              formError && h("p", { className: "mt-4 text-red-700 font-medium" }, formError),
+              h("div", { className: "mt-5 flex justify-end gap-3" }, h("button", { type: "button", onClick: onClose, className: "px-4 py-2 bg-white rounded-lg text-sm" }, "Cancel"), h("button", { type: "submit", className: "px-4 py-2 bg-clay text-white text-sm font-semibold rounded-lg" }, "Save Recipe"))
+            )
           );
         }
 
