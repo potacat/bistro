@@ -46,18 +46,9 @@
       
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      const aliases = {
-        "spring onion": "Scallion", scallions: "Scallion", scallion: "Scallion", "green onion": "Scallion", "green onions": "Scallion", "小葱": "Scallion", "青葱": "Scallion", "葱": "Scallion",
-        "garlic clove": "Garlic", garlic: "Garlic", "蒜": "Garlic", "大蒜": "Garlic", ginger: "Ginger", "姜": "Ginger", oil: "Oil", "cooking oil": "Oil", salt: "Salt", "table salt": "Salt",
-        tomato: "Tomato", tomatoes: "Tomato", "番茄": "Tomato", "西红柿": "Tomato", egg: "Egg", eggs: "Egg", "鸡蛋": "Egg", "green pepper": "Green Pepper", "bell pepper": "Green Pepper",
-        pepper: "Green Pepper", "青椒": "Green Pepper", "pork loin": "Pork Loin", pork: "Pork Loin", "里脊肉": "Pork Loin", tofu: "Tofu", "豆腐": "Tofu", "hou zhu sauce": "Hou Zhu Sauce",
-        "houzhu sauce": "Hou Zhu Sauce", "侯柱酱": "Hou Zhu Sauce",
-      };
-
       const emptyInventoryForm = { name: "", qty: "", unit: "g" };
 
       function titleCase(text) { return (text || "").trim().toLowerCase().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "); }
-      function canonicalName(name) { const key = (name || "").trim().toLowerCase(); return aliases[key] || titleCase(name); }
       function normalizeUnit(unit) {
         const v = (unit || "").trim().toLowerCase();
         const ua = { piece: "pcs", pieces: "pcs", pc: "pcs", 个: "pcs", gram: "g", grams: "g", 克: "g", stalks: "stalk", 根: "stalk", cloves: "clove", 瓣: "clove", tablespoon: "tbsp", tablespoons: "tbsp", tbsp: "tbsp", teaspoon: "tsp", teaspoons: "tsp", tsp: "tsp" };
@@ -66,18 +57,18 @@
       function roundQty(qty) { return Math.round(qty * 100) / 100; }
       function formatAmount(qty, unit) { const r = roundQty(Number(qty)); return (Number.isInteger(r) ? r : r.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")) + " " + unit; }
       function parseTags(text) { return Array.from(new Set((text || "").split(",").map(t => titleCase(t)).filter(Boolean))); }
-      function parseIngredients(text, role) { return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const p = l.split(",").map(part => part.trim()); if (p.length < 3) return null; const q = Number(p[1]); if (!p[0] || !Number.isFinite(q) || q <= 0 || !p[2]) return null; return { name: canonicalName(p[0]), qty: q, unit: normalizeUnit(p[2]), role }; }).filter(Boolean); }
+      function parseIngredients(text, role) { return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const p = l.split(",").map(part => part.trim()); if (p.length < 3) return null; const q = Number(p[1]); if (!p[0] || !Number.isFinite(q) || q <= 0 || !p[2]) return null; return { name: titleCase(p[0]), qty: q, unit: normalizeUnit(p[2]), role }; }).filter(Boolean); }
       function generateSubtitle(name, ingredients) { const names = ingredients.slice(0, 3).map(item => item.name); if (names.length === 0) return "A simple home-style dish for two"; const last = names.pop(); return "Home-style " + name.toLowerCase() + (names.length ? " with " + names.join(", ") + " and " : " with ") + last; }
       function ensureArray(val) { if (Array.isArray(val)) return val; if (typeof val === 'string') return val.split('\n').map(l => l.trim()).filter(Boolean); return []; }
 
       // ==========================================
       // 🧱 ATOMIC LAYOUT BASE REUSABLE PIECES
       // ==========================================
-      function Field({ label, value, onChange, placeholder, type="text", min, max, step, disabled=false, className="" }) { 
-        return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("input", { type, value, placeholder, min, max, step, disabled, onChange: (e) => onChange(e.target.value), className: `w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay disabled:opacity-60 ${className}` })); 
+      function Field({ label, value, onChange, placeholder, type="text", min, max, step, disabled=false, maxLength, className="" }) { 
+        return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("input", { type, value, placeholder, min, max, step, disabled, maxLength, onChange: (e) => onChange(e.target.value), className: `w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay disabled:opacity-60 ${className}` })); 
       }
-      function TextAreaField({ label, value, onChange, rows, hint, placeholder }) { 
-        return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("textarea", { value, rows, placeholder, onChange: (e) => onChange(e.target.value), className: "w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay" }), hint && h("span", { className: "text-[10px] opacity-60 mt-0.5 block" }, hint)); 
+      function TextAreaField({ label, value, onChange, rows, hint, placeholder, maxLength }) { 
+        return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("textarea", { value, rows, placeholder, maxLength, onChange: (e) => onChange(e.target.value), className: "w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay" }), hint && h("span", { className: "text-[10px] opacity-60 mt-0.5 block" }, hint)); 
       }
       function Stat({ label, value }) { 
         return h("div", { className: "min-w-20 rounded-xl bg-cream p-3 text-center" }, h("p", { className: "text-2xl font-bold" }, value), h("p", { className: "text-[10px] uppercase opacity-60 font-bold" }, label)); 
@@ -94,17 +85,16 @@
 
         return h("div", { className: "relative grid grid-cols-[1fr_80px_80px_90px_auto] gap-2 items-center bg-white p-2 rounded-lg border" },
           h("div", { className: "relative" },
-            h("input", { value: row.searchQuery, placeholder: "Type ingredient...", onChange: (e) => onChange(Object.assign({}, row, { searchQuery: e.target.value, ingredient_id: null, showSuggestions: true })), className: "w-full bg-cream p-2 text-sm outline-none rounded" }),
+            h("input", { maxLength: 50, value: row.searchQuery, placeholder: "Type ingredient...", onChange: (e) => onChange(Object.assign({}, row, { searchQuery: e.target.value, ingredient_id: null, showSuggestions: true })), className: "w-full bg-cream p-2 text-sm outline-none rounded" }),
             row.showSuggestions && suggestions.length > 0 && h("div", { className: "absolute left-0 right-0 top-full bg-white border z-50 rounded shadow-lg" },
               suggestions.map(s => h("button", { key: s.id, type: "button", onClick: () => onChange(Object.assign({}, row, { searchQuery: s.name, ingredient_id: s.id, unit: s.unit, role: s.role, showSuggestions: false })), className: "w-full text-left px-3 py-2 text-xs hover:bg-cream border-b font-medium" }, `${s.name} (${s.unit})`))
             )
           ),
           h("input", { type: "number", value: row.qty, placeholder: "Qty", step: "0.01", onChange: (e) => onChange(Object.assign({}, row, { qty: e.target.value })), className: "w-full bg-cream p-2 text-sm outline-none rounded" }),
-          h("input", { value: row.unit, placeholder: "Unit", disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { unit: e.target.value })), className: "w-full bg-cream p-2 text-sm outline-none rounded disabled:opacity-50" }),
+          h("input", { maxLength: 10, value: row.unit, placeholder: "Unit", disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { unit: e.target.value })), className: "w-full bg-cream p-2 text-sm outline-none rounded disabled:opacity-50" }),
           h("select", { value: row.role, disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { role: e.target.value })), className: "w-full bg-cream p-2 text-xs outline-none rounded" },
             h("option", { value: "main" }, "Main"), h("option", { value: "pantry" }, "Pantry")
           ),
-          // 🛡️ Added confirmation dialogue before stripping a custom ingredient row
           h("button", { type: "button", onClick: () => { if (window.confirm("Remove this ingredient line?")) onRemove(); }, className: "text-red-600 font-bold px-2 text-sm" }, "×")
         );
       }
@@ -135,7 +125,7 @@
           h("form", { onSubmit: handleLocalSubmit, className: "grid grid-cols-[1fr_100px_90px_100px] gap-3 items-end pb-4" },
             h("div", { className: "relative" },
               h("span", { className: "text-xs font-bold block mb-1 text-cedar/75" }, "Ingredient Search"),
-              h("input", { value: inventoryForm.name, placeholder: "Type name...", onChange: (e) => { setInventoryForm(Object.assign({}, inventoryForm, { name: e.target.value })); setShowSuggest(true); }, className: "w-full p-2 rounded bg-cream text-sm outline-none" }),
+              h("input", { maxLength: 50, value: inventoryForm.name, placeholder: "Type name...", onChange: (e) => { setInventoryForm(Object.assign({}, inventoryForm, { name: e.target.value })); setShowSuggest(true); }, className: "w-full p-2 rounded bg-cream text-sm outline-none" }),
               showSuggest && suggestions.length > 0 && h("div", { className: "absolute left-0 right-0 top-full bg-white border z-50 rounded shadow-lg" },
                 suggestions.map(s => h("button", { key: s.id, type: "button", onClick: () => { setInventoryForm({ name: s.name, qty: inventoryForm.qty, unit: s.unit }); setShowSuggest(false); }, className: "w-full text-left px-3 py-2 text-xs border-b hover:bg-cream" }, `${s.name} (${s.unit})`))
               )
@@ -146,7 +136,7 @@
             ),
             h("div", null,
               h("span", { className: "text-xs font-bold block mb-1 text-cedar/75" }, "Unit"),
-              h("input", { value: inventoryForm.unit, placeholder: "Unit", disabled: !!activeMatchedIngredient, onChange: (e) => setInventoryForm(Object.assign({}, inventoryForm, { unit: e.target.value })), className: "w-full p-2 rounded bg-cream text-sm outline-none disabled:opacity-60 font-semibold" })
+              h("input", { maxLength: 10, value: inventoryForm.unit, placeholder: "Unit", disabled: !!activeMatchedIngredient, onChange: (e) => setInventoryForm(Object.assign({}, inventoryForm, { unit: e.target.value })), className: "w-full p-2 rounded bg-cream text-sm outline-none disabled:opacity-60 font-semibold" })
             ),
             h("button", { type: "submit", className: "py-2 bg-clay text-white font-semibold text-sm rounded shadow hover:bg-cedar" }, "Add Item")
           ),
@@ -167,6 +157,7 @@
         );
       }
 
+      // 🛡️ All Text Areas and Fields mapped with safe MaxLengths
       function AddDishModal({ formName, setFormName, formOriginalName, setFormOriginalName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose, onSubmit }) {
         const addLine = () => setFormIngredients(c => ensureArray(c).concat({ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }));
         
@@ -180,15 +171,15 @@
             h("div", { className: "mb-5 flex items-center justify-between" }, h("h2", { className: "text-2xl font-semibold" }, "Add Custom Recipe"), h("button", { type: "button", onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold" }, "Close")),
             h("div", { className: "grid gap-4 md:grid-cols-2" },
               h("div", { className: "space-y-4" },
-                h(Field, { label: "Recipe Name (English)", value: formName, onChange: setFormName, placeholder: "e.g., General Tso Chicken" }),
-                h(Field, { label: "Original Name (Optional)", value: formOriginalName, onChange: setFormOriginalName, placeholder: "e.g., 左宗棠鸡 / Tortilla de Patatas" }),
-                h(Field, { label: "Category Tags", value: formTags, onChange: setFormTags }),
-                h(TextAreaField, { label: "Preparation Steps", value: formPrep, onChange: setFormPrep, rows: 3 }),
-                h(TextAreaField, { label: "Cooking Steps", value: formCook, onChange: setFormCook, rows: 3 })
+                h(Field, { maxLength: 100, label: "Recipe Name (English)", value: formName, onChange: setFormName, placeholder: "e.g., General Tso Chicken" }),
+                h(Field, { maxLength: 100, label: "Original Name (Optional)", value: formOriginalName, onChange: setFormOriginalName, placeholder: "e.g., 左宗棠鸡 / Tortilla de Patatas" }),
+                h(Field, { maxLength: 150, label: "Category Tags", value: formTags, onChange: setFormTags }),
+                h(TextAreaField, { maxLength: 2000, label: "Preparation Steps", value: formPrep, onChange: setFormPrep, rows: 3 }),
+                h(TextAreaField, { maxLength: 2000, label: "Cooking Steps", value: formCook, onChange: setFormCook, rows: 3 })
               ),
               h("div", { className: "space-y-3" },
                 h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
-                h("div", { className: "space-y-2" },
+                h("div", { className: "space-y-2 max-h-72 overflow-auto" },
                   ensureArray(formIngredients).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setFormIngredients(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setFormIngredients(c => ensureArray(c).filter((_, i) => i !== idx)) }))
                 )
               )
@@ -226,7 +217,7 @@
           ),
           h("div", { className: "p-5 pt-2 grid grid-cols-2 gap-2" },
             h("button", { onClick: onLogClick, className: "rounded-lg border border-clay text-clay px-3 py-2.5 text-sm font-semibold hover:bg-cream" }, "📝 Log"),
-            h("button", { onClick: onAdd, className: "rounded-lg bg-clay text-white px-3 py-2.5 text-sm font-semibold hover:bg-cedar" }, "Add to List")
+            h("button", { onClick: onAdd, className: "rounded-lg bg-clay text-white px-3 py-2.5 text-sm font-semibold hover:bg-cedar" }, "Add to Cart")
           )
         );
       }
@@ -241,7 +232,7 @@
           log.notes && h("div", { className: "mt-2" },
             !showNote ? h("button", { onClick: () => executeSecureAction(() => setShowNote(true)), type: "button", className: "text-xs text-clay underline font-medium" }, "View Note") :
             h("div", { className: "bg-cream p-2.5 rounded-lg border border-cedar/5 mt-1 relative" },
-              h("p", { className: "text-cedar/80 text-xs leading-relaxed pr-8 whitespace-pre-wrap" }, log.notes),
+              h("p", { className: "text-cedar/80 text-xs leading-relaxed pr-8 whitespace-pre-wrap break-words" }, log.notes),
               h("button", { onClick: () => setShowNote(false), type: "button", className: "absolute top-2 right-2 text-[10px] text-cedar/60 underline" }, "Hide")
             )
           )
@@ -298,14 +289,14 @@
               ),
               h("div", { className: "grid gap-4 md:grid-cols-2" },
                 h("div", { className: "space-y-3" },
-                  h(Field, { label: "Recipe Name (English)", value: editName, onChange: setEditName }),
-                  h(Field, { label: "Original Name (Optional)", value: editOriginalName, onChange: setEditOriginalName }),
-                  h(Field, { label: "Tags", value: editTags, onChange: setEditTags }),
-                  h(TextAreaField, { label: "Preparation", value: editPrep, onChange: setEditPrep, rows: 3 }), h(TextAreaField, { label: "Cooking", value: editCook, onChange: setEditCook, rows: 3 })
+                  h(Field, { maxLength: 100, label: "Recipe Name (English)", value: editName, onChange: setEditName }),
+                  h(Field, { maxLength: 100, label: "Original Name (Optional)", value: editOriginalName, onChange: setEditOriginalName }),
+                  h(Field, { maxLength: 150, label: "Tags", value: editTags, onChange: setEditTags }),
+                  h(TextAreaField, { maxLength: 2000, label: "Preparation", value: editPrep, onChange: setEditPrep, rows: 3 }), h(TextAreaField, { maxLength: 2000, label: "Cooking", value: editCook, onChange: setEditCook, rows: 3 })
                 ),
                 h("div", { className: "space-y-3" },
                   h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold" }, "Add Ingredients"), h("button", { type: "button", onClick: () => setEditRows(c => ensureArray(c).concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-2 py-1 rounded" }, "+ Add Line")),
-                  h("div", { className: "space-y-2" },
+                  h("div", { className: "space-y-2 max-h-72 overflow-auto" },
                     ensureArray(editRows).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setEditRows(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setEditRows(c => ensureArray(c).filter((_, i) => i !== idx)) }))
                   )
                 )
@@ -322,7 +313,7 @@
             h("h2", { className: "text-2xl font-bold" }, `Logging ${dish.name}`),
             h(Field, { type: "number", min: "0", max: "10", step: "0.1", label: "Score Rating (0-10)", value: rating, onChange: setRating }),
             h(Field, { type: "date", label: "Date", value: cookingDate, onChange: setCookingDate }), 
-            h(TextAreaField, { label: "Notes", value: notes, onChange: setNotes, rows: 3 }),
+            h(TextAreaField, { maxLength: 1000, label: "Notes", value: notes, onChange: setNotes, rows: 3 }),
             h("div", { className: "flex justify-end gap-2 border-t pt-3 mt-2" }, h("button", { type: "button", onClick: onClose, className: "px-4 py-2 bg-white rounded-lg text-sm font-semibold" }, "Cancel"), h("button", { type: "submit", className: "px-4 py-2 bg-clay text-white text-sm font-semibold rounded-lg hover:bg-cedar" }, "Save"))
           )
         );
@@ -333,8 +324,8 @@
         return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-sm" },
           h("form", { onSubmit: (e) => { e.preventDefault(); if (name.trim()) onConfirm({ name, note }); }, className: "w-full max-w-md rounded-xl bg-cream p-6 shadow-soft border space-y-4 text-left" },
             h("h2", { className: "text-2xl font-bold text-ink" }, "Finalize Your Order"),
-            h(Field, { label: "Your Name", value: name, onChange: setName, placeholder: "e.g., Alex" }),
-            h(TextAreaField, { label: "Order Note (Optional)", value: note, onChange: setNote, rows: 3 }),
+            h(Field, { maxLength: 50, label: "Your Name", value: name, onChange: setName, placeholder: "e.g., Alex" }),
+            h(TextAreaField, { maxLength: 500, label: "Order Note (Optional)", value: note, onChange: setNote, rows: 3 }),
             h("div", { className: "flex justify-end gap-2 border-t pt-3 mt-4" },
               h("button", { type: "button", onClick: onClose, className: "px-4 py-2 bg-white rounded-lg text-sm font-semibold" }, "Cancel"),
               h("button", { type: "submit", className: "px-4 py-2 bg-clay text-white text-sm font-semibold rounded-lg hover:bg-cedar" }, "Confirm Order")
@@ -387,7 +378,7 @@
       }
 
       function IngredientSection({ title, items }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-1.5" }, title), h("div", { className: "flex flex-wrap gap-1.5" }, items.length ? items.map(i => h("span", { key: i.name, className: "bg-white border px-2.5 py-1 rounded-full text-xs" }, `${i.name}: ${formatAmount(i.qty, i.unit)}`)) : h("span", { className: "text-xs opacity-50" }, "None"))); }
-      function StepSection({ title, steps }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-2" }, title), h("ol", { className: "space-y-2" }, steps.map((s, idx) => h("li", { key: idx, className: "bg-white/70 border p-3 rounded-lg text-xs leading-relaxed" }, h("span", { className: "font-bold text-clay mr-2" }, String(idx+1).padStart(2, '0')), s)))); }
+      function StepSection({ title, steps }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-2" }, title), h("ol", { className: "space-y-2" }, steps.map((s, idx) => h("li", { key: idx, className: "bg-white/70 border p-3 rounded-lg text-xs leading-relaxed break-words" }, h("span", { className: "font-bold text-clay mr-2" }, String(idx+1).padStart(2, '0')), s)))); }
 
       function App() {
         const [session, setSession] = useState(null);
@@ -484,7 +475,7 @@
           const { data, error } = await supabase.auth.signInWithPassword({
             email: FAMILY_EMAIL, password: challengePassword
           });
-          if (error) { setChallengeError("Incorrect administrative password code."); return; }
+          if (error) { setChallengeError("Incorrect password."); return; }
           if (data.session) {
             setSession(data.session);
             setChallengeModalOpen(false);
@@ -521,7 +512,8 @@
         const requiredList = useMemo(() => {
           const map = new Map();
           orderItems.forEach(dish => {
-            const all = ensureArray(dish.mainIngredients).concat(ensureArray(dish.pantryIngredients));
+            // 🛡️ Explicitly excluded pantryIngredients to satisfy Grocery List rules
+            const all = ensureArray(dish.mainIngredients);
             all.forEach(i => {
               const k = i.name.toLowerCase() + "-" + i.unit.toLowerCase();
               const curr = map.get(k) || { name: i.name, unit: i.unit, qty: 0 };
@@ -715,9 +707,9 @@
           isCheckoutOpen && h(CheckoutModal, { onClose: () => setIsCheckoutOpen(false), onConfirm: triggerOrderSubmission }),
           challengeModalOpen && h("div", { className: "fixed inset-0 z-[100] grid place-items-center bg-ink/50 backdrop-blur-sm" },
             h("form", { onSubmit: handleChallengeSubmit, className: "bg-cream p-6 rounded-xl shadow-soft max-w-sm w-full border text-center" },
-              h("h3", { className: "text-lg font-bold mb-2" }, "Administrative Override Required"),
-              h("p", { className: "text-xs text-cedar/65 mb-4" }, "Please supply the private anniversary pass code to commit database alteration changes."),
-              h("input", { type: "password", value: challengePassword, onChange: (e) => setChallengeChallengePassword(e.target.value), placeholder: "Password...", className: "w-full p-2.5 rounded-lg border text-center mb-3 outline-none" }),
+              h("h3", { className: "text-lg font-bold mb-2" }, "Password Required"),
+              h("p", { className: "text-xs text-cedar/65 mb-4" }, "Please enter the password to make changes."),
+              h("input", { type: "password", value: challengePassword, onChange: (e) => setChallengeChallengePassword(e.target.value), placeholder: "Enter password...", className: "w-full p-2.5 rounded-lg border text-center mb-3 outline-none" }),
               challengeError && h("p", { className: "text-xs text-red-600 font-bold mb-3" }, challengeError),
               h("div", { className: "flex justify-end gap-2" },
                 h("button", { type: "button", onClick: () => setChallengeModalOpen(false), className: "px-3 py-1.5 bg-white text-xs rounded" }, "Cancel"),
