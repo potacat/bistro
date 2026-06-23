@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Family Menu V2.3 (Dynamic Entry Autocomplete)</title>
+    <title>Family Menu V2.3.1 (Dynamic Entry Autocomplete)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
@@ -402,6 +402,7 @@
           );
         }
 
+        // 🛡️ UI Fix: Label explicitly renamed to 'Add Ingredients' + macro overflow padding constraints dropped
         function AddDishModal({ formName, setFormName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose, onSubmit }) {
           const addLine = () => setFormIngredients(c => c.concat({ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }));
           return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
@@ -415,8 +416,8 @@
                   h(TextAreaField, { label: "Cooking Steps", value: formCook, onChange: setFormCook, rows: 3 })
                 ),
                 h("div", { className: "space-y-3" },
-                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Ingredients Allocation Panel"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
-                  h("div", { className: "space-y-2 max-h-72 overflow-auto pr-1" },
+                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
+                  h("div", { className: "space-y-2" },
                     formIngredients.map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setFormIngredients(c => c.map((r, i) => i === idx ? updated : r)), onRemove: () => setFormIngredients(c => c.filter((_, i) => i !== idx)) }))
                   )
                 )
@@ -459,6 +460,7 @@
           );
         }
 
+        // 🛡️ UI Fix: Label explicitly renamed to 'Add Ingredients' + macro overflow padding constraints dropped
         function RecipeModal({ dish, historyLogs, masterIngredients, onClose, onDelete, onUpdate, onLogClick }) {
           const [isEditing, setIsEditing] = useState(false);
           const [editName, setEditName] = useState(""); const [editTags, setEditTags] = useState(""); const [editPrep, setEditPrep] = useState(""); const [editCook, setEditCook] = useState("");
@@ -511,8 +513,8 @@
                     h(TextAreaField, { label: "Preparation", value: editPrep, onChange: setEditPrep, rows: 3 }), h(TextAreaField, { label: "Cooking", value: editCook, onChange: setEditCook, rows: 3 })
                   ),
                   h("div", { className: "space-y-3" },
-                    h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold" }, "Ingredients Node Config"), h("button", { onClick: () => setEditRows(c => c.concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-2 py-1 rounded" }, "+ Add Line")),
-                    h("div", { className: "space-y-2 max-h-80 overflow-auto" },
+                    h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold" }, "Add Ingredients"), h("button", { onClick: () => setEditRows(c => c.concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-2 py-1 rounded" }, "+ Add Line")),
+                    h("div", { className: "space-y-2" },
                       editRows.map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setEditRows(c => c.map((r, i) => i === idx ? updated : r)), onRemove: () => setEditRows(c => c.filter((_, i) => i !== idx)) }))
                     )
                   )
@@ -579,7 +581,7 @@
             h("div", { className: "rounded-lg border bg-white/80 p-5 shadow-soft" },
               orderItems.length === 0 ? h("div", { className: "text-center text-sm p-4 opacity-50" }, "No orders queued.") : orderItems.map(dish => h("div", { key: dish.id, className: "flex items-center justify-between bg-cream p-3 rounded-lg mb-2" },
                 h("div", null, h("p", { className: "font-medium" }, dish.name), h("p", { className: "text-xs text-cedar/65" }, `${dish.count * 2} servings`)),
-                h("div", { className: "flex items-center gap-2" }, h("button", { onClick: () => onUpdate(dish.id, -1), className: "w-6 bg-white border rounded" }, "-"), h("span", { className: "text-sm font-bold" }, dish.count), h("button", { onClick: () => onUpdate(dish.id, 1), className: "w-6 bg-white border rounded" }, "+"))
+                h("div", { className: "flex items-center gap-2" }, h("button", { onClick: () => onUpdate(dish.id, -1), className: "w-6 bg-white border rounded" }, "-"), h("span", { className: "w-6 text-center text-sm font-bold" }, dish.count), h("button", { onClick: () => onUpdate(dish.id, 1), className: "w-6 bg-white border rounded" }, "+"))
               ))
             )
           );
