@@ -251,64 +251,48 @@
         const fileInputRef = React.useRef(null);
         const isCartLimitReached = cartCount >= 2;
 
-        return h("article", { className: "overflow-hidden rounded-lg border border-white/70 bg-white/80 shadow-soft flex flex-col relative group" },
-          h("div", null,
-            h("div", { className: "relative h-40 w-full overflow-hidden border-b border-cedar/5 bg-cream" },
+        return h("article", { className: "overflow-hidden rounded-lg border border-white/70 bg-white/80 shadow-soft flex flex-col relative group h-full" },
+          h("div", { className: "flex flex-col h-full" },
+            // Image Area
+            h("div", { className: "relative h-40 w-full shrink-0 overflow-hidden border-b border-cedar/5 bg-cream" },
               dish.photo_url 
-                ? h("img", { 
-                    src: dish.photo_url, 
-                    alt: dish.name, 
-                    className: "w-full h-full object-cover animate-fade-in cursor-pointer",
-                    onClick: (e) => { e.stopPropagation(); onImageClick(dish.photo_url); }
-                  })
+                ? h("img", { src: dish.photo_url, alt: dish.name, className: "w-full h-full object-cover animate-fade-in cursor-pointer", onClick: (e) => { e.stopPropagation(); onImageClick(dish.photo_url); } })
                 : h("div", { className: "dish-art h-40 w-full", style: { "--accent-a": dish.accent[0], "--accent-b": dish.accent[1], "--accent-c": dish.accent[2] } }),
               
-              // Floating Action Button Stack (Top Right)
-              h("div", { className: "absolute top-2 right-2 z-10 flex flex-col gap-1.5 items-center" },
-                session && h("button", { 
-                  type: "button",
-                  onClick: () => fileInputRef.current && fileInputRef.current.click(),
-                  className: "p-2 rounded-full bg-ink/60 text-white shadow-md hover:bg-clay hover:scale-105 transition-all backdrop-blur-sm flex items-center justify-center text-xs",
-                  title: "Upload/Change Photo"
-                }, "📸"),
-                session && h("button", { 
-                  type: "button",
-                  onClick: onLogClick,
-                  className: "p-2 rounded-full bg-ink/60 text-white shadow-md hover:bg-clay hover:scale-105 transition-all backdrop-blur-sm flex items-center justify-center text-xs",
-                  title: "Log Cooking"
-                }, "📝"),
+              // Floating Action Buttons (Top Right over image, High Contrast)
+              h("div", { className: "absolute top-2 right-2 z-10 flex flex-col gap-2 items-center" },
+                session && h("button", { type: "button", onClick: () => fileInputRef.current && fileInputRef.current.click(), className: "w-8 h-8 rounded-full bg-white/90 border border-cedar/10 text-ink shadow flex items-center justify-center text-sm hover:bg-white hover:scale-105 transition-all backdrop-blur-sm", title: "Upload/Change Photo" }, "📸"),
+                session && h("button", { type: "button", onClick: onLogClick, className: "w-8 h-8 rounded-full bg-white/90 border border-cedar/10 text-ink shadow flex items-center justify-center text-sm hover:bg-white hover:scale-105 transition-all backdrop-blur-sm", title: "Log Cooking" }, "📝"),
                 h("input", { type: "file", ref: fileInputRef, accept: "image/*", className: "hidden", onChange: (e) => { const file = e.target.files[0]; if (file) onPhotoUpload(dish.id, file, dish.photo_url); } })
-              ),
-
-              // Floating Cart Icon Matrix (Bottom Right)
-              h("div", { className: "absolute bottom-2 right-2 z-10" },
-                h("button", { 
-                  type: "button",
-                  disabled: isCartLimitReached,
-                  onClick: onAdd,
-                  className: `p-2.5 rounded-full shadow-md text-white backdrop-blur-sm flex items-center justify-center text-sm transition-all ${
-                    isCartLimitReached 
-                      ? "bg-gray-400/60 cursor-not-allowed opacity-50" 
-                      : "bg-ink/60 hover:bg-clay hover:scale-105"
-                  }`,
-                  title: isCartLimitReached ? "Limit of 2 reached" : "Add to Cart"
-                }, "🛒")
               )
             ),
-            h("div", { className: "p-5 pb-4 space-y-2.5" },
-              h("div", null,
-                h("button", { onClick: onOpen, className: "min-w-0 text-left text-xl font-semibold leading-tight underline-offset-4 hover:text-clay hover:underline focus:outline-none inline-block" }, 
-                  dish.name,
-                  dish.original_name && h("span", { className: "text-sm text-cedar/50 font-medium ml-2" }, dish.original_name)
+            // Content Area (White background)
+            h("div", { className: "p-4 flex-1 flex flex-col relative" },
+              // Text Content (with right padding to make room for cart button)
+              h("div", { className: "pr-10" },
+                h("button", { onClick: onOpen, className: "min-w-0 text-left text-lg font-semibold leading-tight underline-offset-4 hover:text-clay hover:underline focus:outline-none block" }, 
+                  dish.name, 
+                  dish.original_name && h("span", { className: "text-xs text-cedar/50 font-medium ml-2 block sm:inline mt-0.5 sm:mt-0" }, dish.original_name)
                 ),
-                h("div", { className: "flex items-center gap-2 text-xs text-amber-600 font-bold mt-1 mb-1" },
-                  dish.avgRating !== null ? `⭐ ${dish.avgRating}` : '⭐ New',
-                  h("span", { className: "text-cedar/30" }, "•"),
+                h("div", { className: "flex items-center gap-2 text-xs text-amber-600 font-bold mt-1.5 mb-2" }, 
+                  dish.avgRating !== null ? `⭐ ${dish.avgRating}` : '⭐ New', 
+                  h("span", { className: "text-cedar/30" }, "•"), 
                   h("span", { className: "text-cedar/70" }, `${dish.calories} kcal`)
                 ),
-                h("div", { className: "mt-2 flex flex-wrap gap-2" },
-                  ensureArray(dish.tags).map(tag => h("span", { key: tag, className: "rounded-full bg-white px-3 py-0.5 text-xs text-cedar/70 border" }, tag))
+                // Tags (Limited to strictly 2 items)
+                h("div", { className: "flex flex-wrap gap-1.5" }, 
+                  ensureArray(dish.tags).slice(0, 2).map(tag => h("span", { key: tag, className: "rounded-full bg-white px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-cedar/70 border border-cedar/10" }, tag))
                 )
+              ),
+              // Cart Button (Relocated to bottom-right of the white card area)
+              h("div", { className: "absolute bottom-4 right-4 z-10" },
+                h("button", { 
+                  type: "button", 
+                  disabled: isCartLimitReached, 
+                  onClick: onAdd, 
+                  className: `w-9 h-9 rounded-full shadow border border-cedar/10 backdrop-blur-sm flex items-center justify-center text-sm transition-all ${ isCartLimitReached ? "bg-gray-100 cursor-not-allowed opacity-50 grayscale" : "bg-white/90 hover:bg-white hover:scale-105 text-ink" }`, 
+                  title: isCartLimitReached ? "Limit of 2 reached" : "Add to Cart" 
+                }, "🛒")
               )
             )
           )
@@ -436,10 +420,11 @@
       function Sidebar({ viewMode, orderItems, requiredList, groceryList, coveredList, onClear, onUpdate, onSubmitCart, session, onOpenInventory }) {
         return h("aside", { className: "space-y-4 w-full" }, 
           h(CookList, { orderItems, onClear, onUpdate, onSubmitCart }),
-          viewMode === "menu" && h(GroceryPanel, { requiredList, groceryList, coveredList, onOpenInventory })
+          // Passed `session` down to GroceryPanel
+          viewMode === "menu" && h(GroceryPanel, { requiredList, groceryList, coveredList, onOpenInventory, session })
         );
       }
-
+      
       function CookList({ orderItems, onClear, onUpdate, onSubmitCart }) {
         return h("div", { className: "space-y-4" },
           h("div", { className: "flex items-center justify-between" }, h("h2", { className: "text-xl font-semibold" }, "Cart"), h("button", { onClick: onClear, disabled: orderItems.length === 0, className: "text-sm text-clay disabled:opacity-30" }, "Clear")),
@@ -466,11 +451,12 @@
         );
       }
 
-      function GroceryPanel({ requiredList, groceryList, coveredList, onOpenInventory }) {
+      function GroceryPanel({ requiredList, groceryList, coveredList, onOpenInventory, session }) {
         return h("div", { className: "wood-grain rounded-lg border p-5 shadow-soft" },
           h("div", { className: "flex justify-between items-center mb-4" }, 
             h("h2", { className: "text-xl font-semibold" }, "Grocery List"), 
-            h("button", { onClick: onOpenInventory, className: "text-xs font-bold text-clay hover:underline" }, "Manage Inventory ➔")
+            // Only render "Manage Inventory" if session exists
+            session && h("button", { onClick: onOpenInventory, className: "text-xs font-bold text-clay hover:underline" }, "Manage Inventory ➔")
           ),
           requiredList.length === 0 ? h("p", { className: "text-xs opacity-60 italic p-2" }, "Queue recipes to unpack automated grocery requirements.") :
           groceryList.length === 0 ? h("p", { className: "text-xs text-green-700 font-bold p-2" }, "Current inventory completely satisfies this cook run!") :
@@ -923,8 +909,8 @@
         }
 
         return h("main", { className: "mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-8 lg:px-10" },
-          h("header", { className: "flex flex-col gap-5 border-b border-cedar/10 pb-6 lg:flex-row lg:items-center lg:justify-between" },
-            // Title block now integrated with a cute SVG Cartoon Logo module
+          h("header", { className: "flex flex-col gap-5 border-b border-cedar/10 pb-6 lg:flex-row lg:items-start lg:justify-between" },
+            // Title block
             h("div", { className: "flex items-center gap-4 max-w-2xl" },
               h(PotacatLogo, null),
               h("div", null,
@@ -932,13 +918,16 @@
                 h("p", { className: "mt-2 max-w-xl text-sm leading-6 text-cedar/75" }, "Welcome to Potacat Bistro. Browse our curated menu, discover our home-style recipes, and easily submit your order for your next meal.")
               )
             ),
-            // Header actions repositioned neatly with Log In / Log Out utility switches
-            h("div", { className: "flex flex-wrap gap-2.5 sm:items-center shrink-0" },
-              h("button", { onClick: () => executeSecureAction(openNewFormModal), className: "rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cedar" }, "Add a Dish"),
-              session 
-                ? h("button", { onClick: handleSignOut, className: "rounded-lg border border-clay px-4 py-2.5 text-sm font-semibold text-clay bg-white hover:bg-cream transition shadow-sm" }, "🚪 Log Out")
-                : h("button", { onClick: () => executeSecureAction(() => {}), className: "rounded-lg bg-clay px-4 py-2.5 text-sm font-semibold text-white hover:bg-cedar transition shadow-sm" }, "🔑 Log In"),
-              h("div", { className: "hidden md:grid grid-cols-3 gap-2.5 rounded-lg border border-white/70 bg-white/65 p-2 shadow-soft backdrop-blur" },
+            // Header actions vertically stacked: Buttons on top, Stats on bottom
+            h("div", { className: "flex flex-col gap-3 sm:items-end shrink-0" },
+              h("div", { className: "flex flex-wrap gap-2.5 justify-end" },
+                // Only render "Add a Dish" if session exists
+                session && h("button", { onClick: () => executeSecureAction(openNewFormModal), className: "rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cedar" }, "Add a Dish"),
+                session 
+                  ? h("button", { onClick: handleSignOut, className: "rounded-lg border border-clay px-4 py-2 text-sm font-semibold text-clay bg-white hover:bg-cream transition shadow-sm" }, "🚪 Log Out")
+                  : h("button", { onClick: () => executeSecureAction(() => {}), className: "rounded-lg bg-clay px-4 py-2 text-sm font-semibold text-white hover:bg-cedar transition shadow-sm" }, "🔑 Log In")
+              ),
+              h("div", { className: "hidden md:grid grid-cols-3 gap-2.5 rounded-lg border border-white/70 bg-white/65 p-2 shadow-soft backdrop-blur w-full max-w-[300px]" },
                 h(Stat, { label: "Dishes", value: orderItems.length }), h(Stat, { label: "Servings", value: servings || 0 }), h(Stat, { label: "To Buy", value: groceryList.length })
               )
             )
