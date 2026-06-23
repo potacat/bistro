@@ -83,19 +83,24 @@
           return ensureArray(masterIngredients).filter(m => m.name.toLowerCase().includes(row.searchQuery.toLowerCase())).slice(0, 4);
         }, [row.searchQuery, row.ingredient_id, masterIngredients]);
 
-        return h("div", { className: "relative grid grid-cols-[1fr_80px_80px_90px_auto] gap-2 items-center bg-white p-2 rounded-lg border" },
-          h("div", { className: "relative" },
-            h("input", { maxLength: 50, value: row.searchQuery, placeholder: "Type ingredient...", onChange: (e) => onChange(Object.assign({}, row, { searchQuery: e.target.value, ingredient_id: null, showSuggestions: true })), className: "w-full bg-cream p-2 text-sm outline-none rounded" }),
-            row.showSuggestions && suggestions.length > 0 && h("div", { className: "absolute left-0 right-0 top-full bg-white border z-50 rounded shadow-lg" },
-              suggestions.map(s => h("button", { key: s.id, type: "button", onClick: () => onChange(Object.assign({}, row, { searchQuery: s.name, ingredient_id: s.id, unit: s.unit, role: s.role, showSuggestions: false })), className: "w-full text-left px-3 py-2 text-xs hover:bg-cream border-b font-medium" }, `${s.name} (${s.unit})`))
-            )
+        return h("div", { className: "flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-lg border relative" },
+          h("div", { className: "flex gap-2 items-center flex-1" },
+            h("div", { className: "relative flex-1" },
+              h("input", { maxLength: 50, value: row.searchQuery, placeholder: "Type ingredient...", onChange: (e) => onChange(Object.assign({}, row, { searchQuery: e.target.value, ingredient_id: null, showSuggestions: true })), className: "w-full bg-cream p-2 text-sm outline-none rounded" }),
+              row.showSuggestions && suggestions.length > 0 && h("div", { className: "absolute left-0 right-0 top-full bg-white border z-50 rounded shadow-lg" },
+                suggestions.map(s => h("button", { key: s.id, type: "button", onClick: () => onChange(Object.assign({}, row, { searchQuery: s.name, ingredient_id: s.id, unit: s.unit, role: s.role, showSuggestions: false })), className: "w-full text-left px-3 py-2 text-xs hover:bg-cream border-b font-medium" }, `${s.name} (${s.unit})`))
+              )
+            ),
+            h("button", { type: "button", onClick: () => { if (window.confirm("Remove this ingredient line?")) onRemove(); }, className: "text-red-600 font-bold px-2 text-sm sm:hidden shrink-0" }, "×")
           ),
-          h("input", { type: "number", value: row.qty, placeholder: "Qty", step: "0.01", onChange: (e) => onChange(Object.assign({}, row, { qty: e.target.value })), className: "w-full bg-cream p-2 text-sm outline-none rounded" }),
-          h("input", { maxLength: 10, value: row.unit, placeholder: "Unit", disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { unit: e.target.value })), className: "w-full bg-cream p-2 text-sm outline-none rounded disabled:opacity-50" }),
-          h("select", { value: row.role, disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { role: e.target.value })), className: "w-full bg-cream p-2 text-xs outline-none rounded" },
-            h("option", { value: "main" }, "Main"), h("option", { value: "pantry" }, "Pantry")
-          ),
-          h("button", { type: "button", onClick: () => { if (window.confirm("Remove this ingredient line?")) onRemove(); }, className: "text-red-600 font-bold px-2 text-sm" }, "×")
+          h("div", { className: "grid grid-cols-3 sm:flex gap-2 items-center shrink-0" },
+            h("input", { type: "number", value: row.qty, placeholder: "Qty", step: "0.01", onChange: (e) => onChange(Object.assign({}, row, { qty: e.target.value })), className: "w-full sm:w-20 bg-cream p-2 text-sm outline-none rounded" }),
+            h("input", { maxLength: 10, value: row.unit, placeholder: "Unit", disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { unit: e.target.value })), className: "w-full sm:w-20 bg-cream p-2 text-sm outline-none rounded disabled:opacity-50" }),
+            h("select", { value: row.role, disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { role: e.target.value })), className: "w-full sm:w-24 bg-cream p-2 text-xs outline-none rounded" },
+              h("option", { value: "main" }, "Main"), h("option", { value: "pantry" }, "Pantry")
+            ),
+            h("button", { type: "button", onClick: () => { if (window.confirm("Remove this ingredient line?")) onRemove(); }, className: "text-red-600 font-bold px-2 text-sm hidden sm:block shrink-0" }, "×")
+          )
         );
       }
 
@@ -157,7 +162,6 @@
         );
       }
 
-      // 🛡️ All Text Areas and Fields mapped with safe MaxLengths
       function AddDishModal({ formName, setFormName, formOriginalName, setFormOriginalName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose, onSubmit }) {
         const addLine = () => setFormIngredients(c => ensureArray(c).concat({ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }));
         
@@ -174,14 +178,17 @@
                 h(Field, { maxLength: 100, label: "Recipe Name (English)", value: formName, onChange: setFormName, placeholder: "e.g., General Tso Chicken" }),
                 h(Field, { maxLength: 100, label: "Original Name (Optional)", value: formOriginalName, onChange: setFormOriginalName, placeholder: "e.g., 左宗棠鸡 / Tortilla de Patatas" }),
                 h(Field, { maxLength: 150, label: "Category Tags", value: formTags, onChange: setFormTags, placeholder: "e.g., Chinese, Dinner" }),
-                // --- 移动到这里的 Add Ingredients 区块 ---
+                
                 h("div", { className: "space-y-3 bg-white/60 p-4 rounded-lg border border-cedar/10" },
-                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
+                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients")),
                   h("div", { className: "space-y-2" }, 
                     ensureArray(formIngredients).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setFormIngredients(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setFormIngredients(c => ensureArray(c).filter((_, i) => i !== idx)) }))
+                  ),
+                  h("div", { className: "pt-1 text-right" },
+                    h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-3 py-1.5 rounded font-bold hover:bg-cedar" }, "+ Add")
                   )
                 ),
-                // --- 结束 ---
+                
                 h(TextAreaField, { maxLength: 2000, label: "Preparation Steps", value: formPrep, onChange: setFormPrep, rows: 3 }),
                 h(TextAreaField, { maxLength: 2000, label: "Cooking Steps", value: formCook, onChange: setFormCook, rows: 3 })
               )
@@ -289,7 +296,7 @@
                 h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "Recipe"), h("h2", { className: "text-3xl font-semibold text-ink leading-tight" }, dish.name), dish.original_name && h("p", { className: "text-sm text-cedar/50 font-medium" }, dish.original_name), h("p", { className: "mt-2 text-xs text-cedar/65" }, dish.source)),
                 h("div", { className: "flex flex-wrap gap-2 shrink-0 animate-fade-in" },
                   h("button", { onClick: () => executeSecureAction(onLogClick), className: "rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700" }, "📝 Log"),
-                  h("button", { onClick: () => executeSecureAction(enterEditMode), className: "rounded-lg bg-clay px-4 py-2 text-sm font-semibold text-white hover:bg-cedar" }, "✏️ Edit Recipe"),
+                  h("button", { onClick: () => executeSecureAction(enterEditMode), className: "rounded-lg bg-clay px-4 py-2 text-sm font-semibold text-white hover:bg-cedar" }, "✏️ Edit"),
                   h("button", { onClick: () => executeSecureAction(() => onDelete(dish.id)), className: "rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800" }, "🗑️ Delete"),
                   h("button", { onClick: onClose, className: "rounded-lg bg-white border px-4 py-2 text-sm font-semibold text-cedar" }, "Close")
                 )
@@ -317,12 +324,17 @@
                   h(Field, { maxLength: 100, label: "Recipe Name (English)", value: editName, onChange: setEditName }),
                   h(Field, { maxLength: 100, label: "Original Name (Optional)", value: editOriginalName, onChange: setEditOriginalName }),
                   h(Field, { maxLength: 150, label: "Tags", value: editTags, onChange: setEditTags }),
+                  
                   h("div", { className: "space-y-3 bg-white/60 p-4 rounded-lg border border-cedar/10" },
-                    h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: () => setEditRows(c => ensureArray(c).concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-2 py-1 rounded" }, "+ Add Line")),
+                    h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients")),
                     h("div", { className: "space-y-2" }, 
                       ensureArray(editRows).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setEditRows(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setEditRows(c => ensureArray(c).filter((_, i) => i !== idx)) }))
+                    ),
+                    h("div", { className: "pt-1 text-right" },
+                      h("button", { type: "button", onClick: () => setEditRows(c => ensureArray(c).concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-3 py-1.5 rounded font-bold hover:bg-cedar" }, "+ Add")
                     )
                   ),
+                  
                   h(TextAreaField, { maxLength: 2000, label: "Preparation", value: editPrep, onChange: setEditPrep, rows: 3 }), 
                   h(TextAreaField, { maxLength: 2000, label: "Cooking", value: editCook, onChange: setEditCook, rows: 3 })
                 )
@@ -608,7 +620,7 @@
             const calories = allIngs.reduce((sum, i) => sum + (Number(i.qty) * Number(i.calories_per_unit || 0)), 0);
             const stats = getRecipeStats(r.id);
             return Object.assign({}, r, {
-              calories: calories > 0 ? Math.max(40, Math.round(calories / 5) * 5) : 320,
+              calories: calories > 0 ? Math.max(40, Math.round(calories / 5) * 5) : 0,
               avgRating: stats.avg, logCount: stats.count
             });
           });
@@ -785,6 +797,12 @@
         }
 
         function openNewFormModal() {
+          setFormName("");
+          setFormOriginalName("");
+          setFormTags("");
+          setFormPrep("");
+          setFormCook("");
+          setFormError("");
           setFormIngredients([{ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }]);
           setIsFormOpen(true);
         }
