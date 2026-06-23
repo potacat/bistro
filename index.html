@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sai Bistro (Cloud Menu)</title>
+    <title>Potacat Bistro (Cloud Menu)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
@@ -28,7 +28,7 @@
   <body class="min-h-screen text-ink antialiased">
     <div id="root">
       <div style="max-width: 720px; margin: 48px auto; padding: 24px; border-radius: 8px; background: rgba(255,255,255,.72); font-family: sans-serif; color: #2f2924;">
-        <h1 style="font-size: 32px; margin: 0 0 12px;">Connecting to Sai Bistro...</h1>
+        <h1 style="font-size: 32px; margin: 0 0 12px;">Connecting to Potacat Bistro...</h1>
         <p style="line-height: 1.6; margin: 0;">Initializing high-performance digital pipeline...</p>
       </div>
     </div>
@@ -58,7 +58,6 @@
       function formatAmount(qty, unit) { const r = roundQty(Number(qty)); return (Number.isInteger(r) ? r : r.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")) + " " + unit; }
       function parseTags(text) { return Array.from(new Set((text || "").split(",").map(t => titleCase(t)).filter(Boolean))); }
       function parseIngredients(text, role) { return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const p = l.split(",").map(part => part.trim()); if (p.length < 3) return null; const q = Number(p[1]); if (!p[0] || !Number.isFinite(q) || q <= 0 || !p[2]) return null; return { name: titleCase(p[0]), qty: q, unit: normalizeUnit(p[2]), role }; }).filter(Boolean); }
-      function generateSubtitle(name, ingredients) { const names = ingredients.slice(0, 3).map(item => item.name); if (names.length === 0) return "A simple home-style dish for two"; const last = names.pop(); return "Home-style " + name.toLowerCase() + (names.length ? " with " + names.join(", ") + " and " : " with ") + last; }
       function ensureArray(val) { if (Array.isArray(val)) return val; if (typeof val === 'string') return val.split('\n').map(l => l.trim()).filter(Boolean); return []; }
 
       // ==========================================
@@ -88,6 +87,26 @@
             h("button", { onClick: () => onPageChange(currentPage + 1), disabled: currentPage === totalPages, className: "rounded border bg-white px-3 py-1.5 text-xs font-semibold text-cedar hover:bg-cream disabled:opacity-40" }, "Next"),
             h("button", { onClick: () => onPageChange(totalPages), disabled: currentPage === totalPages, className: "rounded border bg-white px-3 py-1.5 text-xs font-semibold text-cedar hover:bg-cream disabled:opacity-40" }, "Last")
           )
+        );
+      }
+
+      // ==========================================
+      // IMAGE PREVIEW MODAL
+      // ==========================================
+      function ImagePreviewModal({ src, onClose }) {
+        return h("div", { 
+          className: "fixed inset-0 z-[100] grid place-items-center bg-ink/85 px-4 backdrop-blur-sm cursor-pointer",
+          onClick: onClose
+        },
+          h("button", { 
+            className: "absolute top-6 right-8 text-white text-4xl font-bold hover:text-clay transition-colors", 
+            onClick: onClose 
+          }, "×"),
+          h("img", { 
+            src, 
+            className: "max-h-[90vh] max-w-full object-contain rounded-lg shadow-2xl animate-fade-in", 
+            onClick: (e) => e.stopPropagation() // Prevent closing when clicking the image itself
+          })
         );
       }
       
@@ -216,15 +235,22 @@
         );
       }
 
-      function DishCard({ dish, session, onPhotoUpload, onAdd, onOpen, onLogClick }) {
+      function DishCard({ dish, session, onPhotoUpload, onImageClick, onAdd, onOpen, onLogClick }) {
         const fileInputRef = React.useRef(null);
 
         return h("article", { className: "overflow-hidden rounded-lg border border-white/70 bg-white/80 shadow-soft flex flex-col justify-between relative group" },
           h("div", null,
-            
             h("div", { className: "relative h-40 w-full overflow-hidden border-b border-cedar/5 bg-cream" },
               dish.photo_url 
-                ? h("img", { src: dish.photo_url, alt: dish.name, className: "w-full h-full object-cover animate-fade-in" })
+                ? h("img", { 
+                    src: dish.photo_url, 
+                    alt: dish.name, 
+                    className: "w-full h-full object-cover animate-fade-in cursor-pointer",
+                    onClick: (e) => {
+                      e.stopPropagation(); // Prevents triggering the recipe modal
+                      onImageClick(dish.photo_url);
+                    }
+                  })
                 : h("div", { className: "dish-art h-40 w-full", style: { "--accent-a": dish.accent[0], "--accent-b": dish.accent[1], "--accent-c": dish.accent[2] } }),
               
               session && h("div", { className: "absolute top-2 right-2 z-10" },
@@ -254,7 +280,7 @@
                   dish.original_name && h("span", { className: "text-sm text-cedar/50 font-medium ml-2" }, dish.original_name)
                 ),
                 h("div", { className: "flex items-center gap-2 text-xs text-amber-600 font-bold mt-1 mb-1" },
-                  dish.avgRating !== null ? `⭐ ${dish.avgRating}/10 (${dish.logCount} logs)` : '⭐ New (No logs)',
+                  dish.avgRating !== null ? `⭐ ${dish.avgRating}` : '⭐ New',
                   h("span", { className: "text-cedar/30" }, "•"),
                   h("span", { className: "text-cedar/70" }, `${dish.calories} kcal`)
                 ),
@@ -303,14 +329,14 @@
 
         const handleLocalUpdate = (e) => {
           e.preventDefault();
-          onUpdate(dish.id, { name: editName, original_name: editOriginalName, subtitle: generateSubtitle(editName, editRows.map(er => ({ name: er.searchQuery }))), tags: parseTags(editTags), preparation: editPrep.split('\n').filter(Boolean), cooking: editCook.split('\n').filter(Boolean) }, editRows);
+          onUpdate(dish.id, { name: editName, original_name: editOriginalName, tags: parseTags(editTags), preparation: editPrep.split('\n').filter(Boolean), cooking: editCook.split('\n').filter(Boolean) }, editRows);
         };
 
         return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
           h("div", { className: "max-h-[88vh] w-full max-w-3xl overflow-auto rounded-xl bg-cream p-6 shadow-soft" },
             !isEditing ? h("div", null,
               h("div", { className: "mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-cedar/10 pb-4" },
-                h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "Recipe"), h("h2", { className: "text-3xl font-semibold text-ink leading-tight" }, dish.name), dish.original_name && h("p", { className: "text-sm text-cedar/50 font-medium" }, dish.original_name), h("p", { className: "mt-2 text-xs text-cedar/65" }, dish.source)),
+                h("div", null, h("p", { className: "mb-1 text-sm font-medium uppercase text-clay" }, "Recipe"), h("h2", { className: "text-3xl font-semibold text-ink leading-tight" }, dish.name), dish.original_name && h("p", { className: "text-sm text-cedar/50 font-medium" }, dish.original_name)),
                 h("div", { className: "flex flex-wrap gap-2 shrink-0 animate-fade-in" },
                   h("button", { onClick: () => executeSecureAction(onLogClick), className: "rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700" }, "📝 Log"),
                   h("button", { onClick: () => executeSecureAction(enterEditMode), className: "rounded-lg bg-clay px-4 py-2 text-sm font-semibold text-white hover:bg-cedar" }, "✏️ Edit"),
@@ -389,10 +415,10 @@
         );
       }
 
-      function Sidebar({ viewMode, orderItems, requiredList, groceryList, coveredList, onClear, onUpdate, onSubmitCart, session, onSignOut }) {
+      function Sidebar({ viewMode, orderItems, requiredList, groceryList, coveredList, onClear, onUpdate, onSubmitCart, session, onSignOut, onOpenInventory }) {
         return h("aside", { className: "space-y-4" }, 
           h(CookList, { orderItems, onClear, onUpdate, onSubmitCart }),
-          viewMode === "menu" && h(GroceryPanel, { requiredList, groceryList, coveredList }),
+          viewMode === "menu" && h(GroceryPanel, { requiredList, groceryList, coveredList, onOpenInventory }),
           h("div", { className: "pt-4" },
             session 
               ? h("button", { onClick: onSignOut, className: "w-full py-2 bg-oat text-cedar text-xs font-bold rounded-lg hover:bg-clay hover:text-white transition shadow-sm" }, "🔓 Session Unlocked (Lock)")
@@ -422,9 +448,12 @@
         );
       }
 
-      function GroceryPanel({ requiredList, groceryList, coveredList }) {
+      function GroceryPanel({ requiredList, groceryList, coveredList, onOpenInventory }) {
         return h("div", { className: "wood-grain rounded-lg border p-5 shadow-soft" },
-          h("div", { className: "flex justify-between items-center mb-4" }, h("h2", { className: "text-xl font-semibold" }, "Grocery List"), h("span", { className: "bg-white px-2 py-0.5 rounded text-xs font-bold" }, "To Buy")),
+          h("div", { className: "flex justify-between items-center mb-4" }, 
+            h("h2", { className: "text-xl font-semibold" }, "Grocery List"), 
+            h("button", { onClick: onOpenInventory, className: "text-xs font-bold text-clay hover:underline" }, "Manage Inventory ➔")
+          ),
           requiredList.length === 0 ? h("p", { className: "text-xs opacity-60 italic p-2" }, "Queue recipes to unpack automated grocery requirements.") :
           groceryList.length === 0 ? h("p", { className: "text-xs text-green-700 font-bold p-2" }, "Current inventory completely satisfies this cook run!") :
           groceryList.map(item => h("div", { key: item.name, className: "bg-white/70 p-3 rounded-lg mb-2 border flex justify-between" }, h("span", { className: "font-medium text-sm" }, item.name), h("span", { className: "text-sm font-bold text-clay" }, formatAmount(item.buyQty, item.unit)))),
@@ -468,13 +497,18 @@
         const [editingInventoryId, setEditingInventoryId] = useState(null);
         const [editingInventoryQty, setEditingInventoryIdQty] = useState("");
 
+        // Search, Sort, Filter, and Pagination States
         const [searchQuery, setSearchQuery] = useState("");
         const [sortMethod, setSortMethod] = useState("recent");
+        const [filterCategory, setFilterCategory] = useState("All");
         const [currentPage, setCurrentPage] = useState(1);
+        
+        // Image Preview State
+        const [previewImage, setPreviewImage] = useState(null);
 
         useEffect(() => {
           setCurrentPage(1);
-        }, [searchQuery, sortMethod]);
+        }, [searchQuery, sortMethod, filterCategory]);
 
         useEffect(() => {
           supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
@@ -667,6 +701,12 @@
             ensureArray(d.tags).some(tag => tag.toLowerCase().includes(query))
           );
 
+          if (filterCategory !== "All") {
+            filtered = filtered.filter(d => 
+              ensureArray(d.tags).some(tag => tag.toLowerCase() === filterCategory.toLowerCase())
+            );
+          }
+
           return filtered.sort((a, b) => {
             if (sortMethod === "recent") return b.id - a.id;
             if (sortMethod === "az") return a.name.localeCompare(b.name);
@@ -680,9 +720,9 @@
             }
             return 0;
           });
-        }, [processedDishes, searchQuery, sortMethod]);
+        }, [processedDishes, searchQuery, sortMethod, filterCategory]);
 
-        const itemsPerPage = 5;
+        const itemsPerPage = 6;
         const totalPages = Math.max(1, Math.ceil(filteredAndSortedDishes.length / itemsPerPage));
         
         const paginatedDishes = useMemo(() => {
@@ -756,7 +796,7 @@
           try {
             const ingredientLinks = await resolveIngredientsPayload(formIngredients);
             const { data: newRec, error } = await supabase.from('recipes').insert([{
-              name, original_name: originalName, subtitle: generateSubtitle(name, formIngredients.map(fi => ({ name: fi.searchQuery }))), time_estimate: "15 min", tags: parseTags(formTags), accent: ["#d78a55", "#8fbc8f", "#f0c36a"], preparation: prepArr, cooking: cookArr, is_custom: true
+              name, original_name: originalName, time_estimate: "15 min", tags: parseTags(formTags), accent: ["#d78a55", "#8fbc8f", "#f0c36a"], preparation: prepArr, cooking: cookArr, is_custom: true
             }]).select().single();
 
             if (error || !newRec) throw new Error("Insertion rejected");
@@ -771,7 +811,7 @@
         }
 
         async function handleUpdateRecipeSecure(id, meta, incomingRows) {
-          await supabase.from('recipes').update({ name: meta.name, original_name: meta.original_name, subtitle: meta.subtitle, tags: meta.tags, preparation: meta.preparation, cooking: meta.cooking }).eq('id', id);
+          await supabase.from('recipes').update({ name: meta.name, original_name: meta.original_name, tags: meta.tags, preparation: meta.preparation, cooking: meta.cooking }).eq('id', id);
           await supabase.from('recipe_ingredients').delete().eq('recipe_id', id);
           const activeLinks = await resolveIngredientsPayload(incomingRows);
           const junctionRows = activeLinks.map(link => ({ recipe_id: id, ingredient_id: link.ingredient_id, qty: link.qty }));
@@ -836,7 +876,7 @@
         }
 
         function triggerOrderSubmission(checkoutData) {
-          let bodyText = `Hi Sai,\n\nAn order has been submitted to Sai's Bistro by ${checkoutData.name}.\n`;
+          let bodyText = `Hi Potacat,\n\nAn order has been submitted to Potacat Bistro by ${checkoutData.name}.\n`;
           if (checkoutData.note) bodyText += `Note: "${checkoutData.note}"\n\n`;
           bodyText += `=== ORDERED DISHES ===\n`;
           orderItems.forEach(item => { bodyText += `- ${item.name} (${item.count * 2} servings)\n`; });
@@ -847,7 +887,7 @@
           navigator.clipboard.writeText(bodyText).then(() => {
             setOrders([]);
             setIsCheckoutOpen(false);
-            alert("Order copied to your clipboard! You can now paste it in a text to Sai to finalize your order! 📱🎉");
+            alert("Order copied to your clipboard! You can now paste it in a text to Potacat to finalize your order! 📱🎉");
           });
         }
 
@@ -865,8 +905,8 @@
         return h("main", { className: "mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10" },
           h("header", { className: "flex flex-col gap-5 border-b border-cedar/10 pb-6 lg:flex-row lg:items-end lg:justify-between" },
             h("div", { className: "max-w-2xl" },
-              h("p", { className: "mb-2 text-sm font-medium uppercase text-clay" }, "Private Domain"), h("h1", { className: "text-4xl font-semibold tracking-normal text-ink sm:text-5xl" }, "Sai Bistro"),
-              h("p", { className: "mt-3 max-w-xl text-base leading-7 text-cedar/75" }, "Welcome to Sai's Bistro, our private kitchen getaway. Explore customized recipes, monitor pantry stock parameters, and coordinate dinner logs.")
+              h("h1", { className: "text-4xl font-semibold tracking-normal text-ink sm:text-5xl" }, "Potacat Bistro"),
+              h("p", { className: "mt-3 max-w-xl text-base leading-7 text-cedar/75" }, "Welcome to Potacat Bistro. Browse our curated menu, discover our home-style recipes, and easily submit your order for your next meal.")
             ),
             h("div", { className: "flex flex-col gap-3 sm:items-end" },
               h("button", { onClick: () => executeSecureAction(openNewFormModal), className: "rounded-lg bg-ink px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cedar" }, "Add to Menu"),
@@ -877,18 +917,26 @@
           ),
           h("section", { className: "grid flex-1 gap-6 lg:grid-cols-[1.2fr_.9fr]" },
             h("div", { className: "space-y-4" },
-              h("div", { className: "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" },
-                h("select", { value: viewMode, onChange: (e) => setViewMode(e.target.value), className: "bg-transparent text-xl font-semibold border-b border-cedar font-serif outline-none cursor-pointer py-1" },
-                  h("option", { value: "menu" }, "Menu"), h("option", { value: "inventory" }, "Inventory")
-                ),
-                viewMode === "menu" && h("div", { className: "flex flex-col sm:flex-row gap-2 w-full sm:max-w-md" },
-                  h("input", { value: searchQuery, placeholder: "Search recipes...", onChange: (e) => setSearchQuery(e.target.value), className: "w-full rounded-lg border border-white/70 bg-white/80 px-3 py-2.5 text-sm outline-none focus:border-clay shadow-sm" }),
-                  h("select", { value: sortMethod, onChange: (e) => setSortMethod(e.target.value), className: "w-full sm:w-auto rounded-lg border border-white/70 bg-white/80 px-3 py-2.5 text-sm outline-none focus:border-clay font-medium text-cedar cursor-pointer shadow-sm" },
+              h("div", { className: "flex flex-col gap-3 mb-2" },
+                viewMode === "menu" && h("div", { className: "flex flex-col sm:flex-row flex-wrap gap-2 w-full" },
+                  h("input", { value: searchQuery, placeholder: "Search recipes...", onChange: (e) => setSearchQuery(e.target.value), className: "flex-1 rounded-lg border border-white/70 bg-white/80 px-3 py-2.5 text-sm outline-none focus:border-clay shadow-sm min-w-[200px]" }),
+                  h("select", { value: filterCategory, onChange: (e) => setFilterCategory(e.target.value), className: "rounded-lg border border-white/70 bg-white/80 px-3 py-2.5 text-sm outline-none focus:border-clay font-medium text-cedar cursor-pointer shadow-sm" },
+                    h("option", { value: "All" }, "All Categories"),
+                    h("option", { value: "Vegetable" }, "Vegetable"),
+                    h("option", { value: "Meat" }, "Meat"),
+                    h("option", { value: "Seafood" }, "Seafood"),
+                    h("option", { value: "Poultry" }, "Poultry"),
+                    h("option", { value: "Pastry" }, "Pastry")
+                  ),
+                  h("select", { value: sortMethod, onChange: (e) => setSortMethod(e.target.value), className: "rounded-lg border border-white/70 bg-white/80 px-3 py-2.5 text-sm outline-none focus:border-clay font-medium text-cedar cursor-pointer shadow-sm" },
                     h("option", { value: "recent" }, "Recently Added"),
                     h("option", { value: "az" }, "Name (A - Z)"),
                     h("option", { value: "rating" }, "Highest Rated"),
                     h("option", { value: "least_cooked" }, "Least Recently Cooked")
                   )
+                ),
+                viewMode === "inventory" && h("div", null,
+                  h("button", { onClick: () => setViewMode("menu"), className: "text-sm font-bold text-clay hover:underline flex items-center gap-1" }, "← Back to Menu")
                 )
               ),
               viewMode === "menu" ? h("div", null,
@@ -898,6 +946,7 @@
                     dish, 
                     session,
                     onPhotoUpload: handlePhotoUpload,
+                    onImageClick: (url) => setPreviewImage(url),
                     onAdd: () => setOrders(c => c.find(o => o.id === dish.id) ? c.map(o => o.id === dish.id ? { id: o.id, count: o.count + 1 } : o) : c.concat({ id: dish.id, count: 1 })), 
                     onOpen: () => setSelectedDish(dish), 
                     onLogClick: () => executeSecureAction(() => setLoggingDish(dish)) 
@@ -906,8 +955,9 @@
                 totalPages > 1 && h(Pagination, { currentPage, totalPages, onPageChange: setCurrentPage })
               ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: () => executeSecureAction(handleAddInventorySecure), onRemoveInventory: (id) => executeSecureAction(() => handleRemoveInventorySecure(id)), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
             ),
-            h(Sidebar, { viewMode, orderItems, requiredList, groceryList, coveredList, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => ensureArray(c).map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true), session, onSignOut: handleSignOut })
+            h(Sidebar, { viewMode, orderItems, requiredList, groceryList, coveredList, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => ensureArray(c).map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true), session, onSignOut: handleSignOut, onOpenInventory: () => setViewMode("inventory") })
           ),
+          previewImage && h(ImagePreviewModal, { src: previewImage, onClose: () => setPreviewImage(null) }),
           selectedDish && h(RecipeModal, { dish: selectedDish, historyLogs: ensureArray(cookingHistory).filter(l => Number(l.recipe_id) === selectedDish.id), masterIngredients, executeSecureAction, onClose: () => setSelectedDish(null), onDelete: handleDeleteRecipeSecure, onUpdate: handleUpdateRecipeSecure, onLogClick: () => executeSecureAction(() => { setLoggingDish(selectedDish); setSelectedDish(null); }), onDeleteLog: handleDeleteLogSecure }),
           loggingDish && h(LogCookingModal, { dish: loggingDish, onClose: () => setLoggingDish(null), onSaveLog: handleAddLogSecure }),
           isFormOpen && h(AddDishModal, { formName, setFormName, formOriginalName, setFormOriginalName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose: () => setIsFormOpen(false), onSubmit: handleSaveNewRecipe }),
