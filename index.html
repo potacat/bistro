@@ -173,7 +173,7 @@
               h("div", { className: "space-y-4" },
                 h(Field, { maxLength: 100, label: "Recipe Name (English)", value: formName, onChange: setFormName, placeholder: "e.g., General Tso Chicken" }),
                 h(Field, { maxLength: 100, label: "Original Name (Optional)", value: formOriginalName, onChange: setFormOriginalName, placeholder: "e.g., 左宗棠鸡 / Tortilla de Patatas" }),
-                h(Field, { maxLength: 150, label: "Category Tags", value: formTags, onChange: setFormTags }),
+                h(Field, { maxLength: 150, label: "Category Tags", value: formTags, onChange: setFormTags, placeholder: "e.g., Chinese, Dinner" }),
                 // --- 移动到这里的 Add Ingredients 区块 ---
                 h("div", { className: "space-y-3 bg-white/60 p-4 rounded-lg border border-cedar/10" },
                   h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
@@ -207,7 +207,6 @@
                   h("span", { className: "text-cedar/30" }, "•"),
                   h("span", { className: "text-cedar/70" }, `${dish.calories} kcal`)
                 ),
-                h("p", { className: "text-sm leading-5 text-cedar/70 line-clamp-2 mt-1" }, dish.subtitle),
                 h("div", { className: "mt-2 flex flex-wrap gap-2" },
                   ensureArray(dish.tags).map(tag => h("span", { key: tag, className: "rounded-full bg-white px-3 py-0.5 text-xs text-cedar/70 border" }, tag))
                 )
@@ -405,7 +404,7 @@
         const [formIngredients, setFormIngredients] = useState([]);
         const [formName, setFormName] = useState("");
         const [formOriginalName, setFormOriginalName] = useState(""); 
-        const [formTags, setFormTags] = useState("Chinese, Dinner");
+        const [formTags, setFormTags] = useState("");
         const [formPrep, setFormPrep] = useState("");
         const [formCook, setFormCook] = useState("");
         const [formError, setFormError] = useState("");
@@ -506,7 +505,14 @@
           });
         }, [recipes, cookingHistory]);
 
-        const visibleDishes = useMemo(() => processedDishes.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase())), [processedDishes, searchQuery]);
+        const visibleDishes = useMemo(() => {
+          const query = searchQuery.toLowerCase().trim();
+          return processedDishes.filter(d => 
+            d.name.toLowerCase().includes(query) || 
+            ensureArray(d.tags).some(tag => tag.toLowerCase().includes(query))
+          );
+        }, [processedDishes, searchQuery]);
+        
         const orderItems = useMemo(() => orders.map(e => { const d = processedDishes.find(i => i.id === e.id); return d ? Object.assign({}, d, { count: e.count }) : null; }).filter(Boolean), [orders, processedDishes]);
 
         const requiredList = useMemo(() => {
