@@ -169,19 +169,21 @@
         return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/35 px-4 backdrop-blur-sm" },
           h("form", { onSubmit: handleLocalSubmit, className: "max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-cream p-6 shadow-soft" },
             h("div", { className: "mb-5 flex items-center justify-between" }, h("h2", { className: "text-2xl font-semibold" }, "Add Custom Recipe"), h("button", { type: "button", onClick: onClose, className: "rounded-full bg-white px-3 py-1 text-sm font-semibold" }, "Close")),
-            h("div", { className: "grid gap-4 md:grid-cols-2" },
+            h("div", { className: "grid gap-4" },
               h("div", { className: "space-y-4" },
                 h(Field, { maxLength: 100, label: "Recipe Name (English)", value: formName, onChange: setFormName, placeholder: "e.g., General Tso Chicken" }),
                 h(Field, { maxLength: 100, label: "Original Name (Optional)", value: formOriginalName, onChange: setFormOriginalName, placeholder: "e.g., 左宗棠鸡 / Tortilla de Patatas" }),
                 h(Field, { maxLength: 150, label: "Category Tags", value: formTags, onChange: setFormTags }),
+                // --- 移动到这里的 Add Ingredients 区块 ---
+                h("div", { className: "space-y-3 bg-white/60 p-4 rounded-lg border border-cedar/10" },
+                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
+                  h("div", { className: "space-y-2" }, 
+                    ensureArray(formIngredients).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setFormIngredients(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setFormIngredients(c => ensureArray(c).filter((_, i) => i !== idx)) }))
+                  )
+                ),
+                // --- 结束 ---
                 h(TextAreaField, { maxLength: 2000, label: "Preparation Steps", value: formPrep, onChange: setFormPrep, rows: 3 }),
                 h(TextAreaField, { maxLength: 2000, label: "Cooking Steps", value: formCook, onChange: setFormCook, rows: 3 })
-              ),
-              h("div", { className: "space-y-3" },
-                h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: addLine, className: "text-xs bg-ink text-white px-2 py-1 rounded font-bold" }, "+ Add Line")),
-                h("div", { className: "space-y-2 max-h-72 overflow-auto" },
-                  ensureArray(formIngredients).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setFormIngredients(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setFormIngredients(c => ensureArray(c).filter((_, i) => i !== idx)) }))
-                )
               )
             ),
             formError && h("p", { className: "mt-4 text-red-700 font-medium" }, formError),
@@ -287,18 +289,19 @@
                   h("button", { type: "submit", className: "px-4 py-2 bg-ink text-white text-sm font-semibold rounded-lg" }, "💾 Save Changes")
                 )
               ),
-              h("div", { className: "grid gap-4 md:grid-cols-2" },
-                h("div", { className: "space-y-3" },
+              h("div", { className: "grid gap-4" },
+                h("div", { className: "space-y-4" },
                   h(Field, { maxLength: 100, label: "Recipe Name (English)", value: editName, onChange: setEditName }),
                   h(Field, { maxLength: 100, label: "Original Name (Optional)", value: editOriginalName, onChange: setEditOriginalName }),
                   h(Field, { maxLength: 150, label: "Tags", value: editTags, onChange: setEditTags }),
-                  h(TextAreaField, { maxLength: 2000, label: "Preparation", value: editPrep, onChange: setEditPrep, rows: 3 }), h(TextAreaField, { maxLength: 2000, label: "Cooking", value: editCook, onChange: setEditCook, rows: 3 })
-                ),
-                h("div", { className: "space-y-3" },
-                  h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold" }, "Add Ingredients"), h("button", { type: "button", onClick: () => setEditRows(c => ensureArray(c).concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-2 py-1 rounded" }, "+ Add Line")),
-                  h("div", { className: "space-y-2 max-h-72 overflow-auto" },
-                    ensureArray(editRows).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setEditRows(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setEditRows(c => ensureArray(c).filter((_, i) => i !== idx)) }))
-                  )
+                  h("div", { className: "space-y-3 bg-white/60 p-4 rounded-lg border border-cedar/10" },
+                    h("div", { className: "flex justify-between items-center" }, h("span", { className: "text-sm font-bold text-cedar" }, "Add Ingredients"), h("button", { type: "button", onClick: () => setEditRows(c => ensureArray(c).concat({ key: Math.random(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false })), className: "bg-ink text-white text-xs px-2 py-1 rounded" }, "+ Add Line")),
+                    h("div", { className: "space-y-2" }, 
+                      ensureArray(editRows).map((row, idx) => h(IngredientRepeaterRow, { key: row.key, row, masterIngredients, onChange: (updated) => setEditRows(c => ensureArray(c).map((r, i) => i === idx ? updated : r)), onRemove: () => setEditRows(c => ensureArray(c).filter((_, i) => i !== idx)) }))
+                    )
+                  ),
+                  h(TextAreaField, { maxLength: 2000, label: "Preparation", value: editPrep, onChange: setEditPrep, rows: 3 }), 
+                  h(TextAreaField, { maxLength: 2000, label: "Cooking", value: editCook, onChange: setEditCook, rows: 3 })
                 )
               )
             )
