@@ -43,7 +43,8 @@
         // =========================================================
         const SUPABASE_URL = 'https://fawxcdheypnfnlxzcwrl.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_0ymWg7r2cAB-A0fQ7Hm4lQ_tV0Mcx1_';
-        const FAMILY_EMAIL = 'ourhome@menu.com'; 
+        const FAMILY_EMAIL = 'ourhome@menu.com';
+        const SAI_EMAIL = 'sai@example.com'; // 📌 Feel free to replace this with Sai's real email address
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -91,6 +92,7 @@
           const [selectedDish, setSelectedDish] = useState(null);
           const [loggingDish, setLoggingDish] = useState(null);
           const [isFormOpen, setIsFormOpen] = useState(false);
+          const [isCheckoutOpen, setIsCheckoutOpen] = useState(false); // 📌 New Checkout Panel Toggle
           const [searchQuery, setSearchQuery] = useState("");
 
           const [formIngredients, setFormIngredients] = useState([]);
@@ -343,6 +345,38 @@
             setIsFormOpen(true);
           }
 
+          // 📌 Checkout automated string dispatcher compilation
+          function triggerOrderSubmission(checkoutData) {
+            let bodyText = `Hi Sai,\n\nAn order has been submitted to Sai's Bistro by ${checkoutData.name} (${checkoutData.email}).\n\n`;
+            if (checkoutData.note) bodyText += `Customer Note:\n"${checkoutData.note}"\n\n`;
+            
+            bodyText += `=== ORDERED DISHES ===\n`;
+            orderItems.forEach(item => {
+              bodyText += `- ${item.name} (${item.count * 2} servings)\n`;
+            });
+            
+            bodyText += `\n=== REQUIRED GROCERY LIST ===\n`;
+            if (groceryList.length === 0) {
+              bodyText += `All items are fully stocked in inventory!\n`;
+            } else {
+              groceryList.forEach(item => {
+                bodyText += `- ${item.name}: Need ${formatAmount(item.buyQty, item.unit)}\n`;
+              });
+            }
+            
+            // A. Copy full summary directly to clipboard layout
+            navigator.clipboard.writeText(bodyText).catch(() => {});
+
+            // B. Launch Mailto protocol client wrapper
+            const mailtoUri = `mailto:${SAI_EMAIL}?cc=${encodeURIComponent(checkoutData.email)}&subject=${encodeURIComponent("Someone has submitted an order to Sai's Bistro")}&body=${encodeURIComponent(bodyText)}`;
+            window.location.href = mailtoUri;
+
+            // Clear Cart status safely
+            setOrders([]);
+            setIsCheckoutOpen(false);
+            alert("Success! The summary has been copied to your clipboard and your email client has been launched to notify Sai! 🎉");
+          }
+
           if (!session) {
             return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-cream/95 px-4 backdrop-blur-md" },
               h("form", { onSubmit: handleLogin, className: "w-full max-w-md rounded-2xl border border-cedar/10 bg-white p-8 shadow-soft text-center" },
@@ -381,17 +415,45 @@
                   visibleDishes.map(dish => h(DishCard, { key: dish.id, dish, onAdd: () => setOrders(c => c.find(o => o.id === dish.id) ? c.map(o => o.id === dish.id ? { id: o.id, count: o.count + 1 } : o) : c.concat({ id: dish.id, count: 1 })), onOpen: () => setSelectedDish(dish), onLogClick: () => setLoggingDish(dish) }))
                 )
               ),
-              h(Sidebar, { orderItems, requiredList, groceryList, coveredList, inventory, inventoryForm, setInventoryForm, masterIngredients, onAddInventory: handleAddInventory, onRemoveInventory: async (id) => { await supabase.from('pantry_inventory').delete().eq('id', id); setInventory(c => c.filter(i => i.id !== id)); }, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => c.map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)) })
+              h(Sidebar, { orderItems, requiredList, groceryList, coveredList, inventory, inventoryForm, setInventoryForm, masterIngredients, onAddInventory: handleAddInventory, onRemoveInventory: async (id) => { await supabase.from('pantry_inventory').delete().eq('id', id); setInventory(c => c.filter(i => i.id !== id)); }, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => c.map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true) })
             ),
             selectedDish && h(RecipeModal, { dish: selectedDish, historyLogs: cookingHistory.filter(l => Number(l.recipe_id) === selectedDish.id), masterIngredients, onClose: () => setSelectedDish(null), onDelete: handleDeleteRecipe, onUpdate: handleUpdateRecipe, onLogClick: () => { setLoggingDish(selectedDish); setSelectedDish(null); }, onDeleteLog: handleDeleteLog }),
             loggingDish && h(LogCookingModal, { dish: loggingDish, onClose: () => setLoggingDish(null), onSaveLog: handleAddLog }),
-            isFormOpen && h(AddDishModal, { formName, setFormName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose: () => setIsFormOpen(false), onSubmit: submitRecipe })
+            isFormOpen && h(AddDishModal, { formName, setFormName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose: () => setIsFormOpen(false), onSubmit: submitRecipe }),
+            isCheckoutOpen && h(CheckoutModal, { onClose: () => setIsCheckoutOpen(false), onConfirm: triggerOrderSubmission })
           );
         }
 
         // ==========================================
-        // 🧱 STRUCTURAL COMPONENTS SECTOR
+        // 🧱 NEW COMPONENT: CheckoutModal Layout (English)
         // ==========================================
+        function CheckoutModal({ onClose, onConfirm }) {
+          const [name, setName] = useState("");
+          const [email, setEmail] = useState("");
+          const [note, setNote] = useState("");
+
+          function handleSubmit(e) {
+            e.preventDefault();
+            if (!name || !email) { alert("Name and Email parameters are required to finalize orders."); return; }
+            if (window.confirm("Confirm your menu request submission? This will draft an automated brief summary.")) {
+              onConfirm({ name: name.trim(), email: email.trim(), note: note.trim() });
+            }
+          }
+
+          return h("div", { className: "fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4 backdrop-blur-sm" },
+            h("form", { onSubmit: handleSubmit, className: "w-full max-w-md rounded-xl bg-cream p-6 shadow-soft border space-y-4 text-left animate-fade-in" },
+              h("div", null, h("p", { className: "text-xs font-semibold uppercase tracking-wider text-clay" }, "Sai's Bistro Dispatcher"), h("h2", { className: "text-2xl font-bold text-ink" }, "Finalize Your Order")),
+              h(Field, { label: "Your Name", value: name, onChange: setName, placeholder: "e.g., Alex" }),
+              h(Field, { type: "email", label: "Your Email", value: email, onChange: setEmail, placeholder: "e.g., alex@example.com" }),
+              h(TextAreaField, { label: "Add a Note to Sai (Optional)", value: note, onChange: setNote, rows: 3, placeholder: "Make it extra spicy! Thanks!" }),
+              h("div", { className: "flex justify-end gap-2 border-t pt-3 mt-4" },
+                h("button", { type: "button", onClick: onClose, className: "px-4 py-2 bg-white rounded-lg text-sm font-semibold" }, "Cancel"),
+                h("button", { type: "submit", className: "px-4 py-2 bg-clay text-white text-sm font-semibold rounded-lg hover:bg-cedar" }, "Confirm & Notify Sai")
+              )
+            )
+          );
+        }
+
         function IngredientRepeaterRow({ row, onChange, onRemove, masterIngredients }) {
           const suggestions = useMemo(() => {
             if (!row.searchQuery || row.ingredient_id) return [];
@@ -612,17 +674,32 @@
         }
 
         function Sidebar(props) { return h("aside", { className: "space-y-4" }, h(CookList, props), h(InventoryPanel, props), h(GroceryPanel, props)); }
-        function CookList({ orderItems, onClear, onUpdate }) {
+        
+        // 📌 CookList Component updated to "Cart" with an integrated "Submit" button
+        function CookList({ orderItems, onClear, onUpdate, onSubmitCart }) {
           return h("div", { className: "space-y-4" },
-            h("div", { className: "flex items-center justify-between" }, h("h2", { className: "text-xl font-semibold" }, "Wishlist"), h("button", { onClick: onClear, disabled: orderItems.length === 0, className: "text-sm text-clay disabled:opacity-30" }, "Clear")),
+            h("div", { className: "flex items-center justify-between" }, 
+              h("h2", { className: "text-xl font-semibold" }, "Cart"), 
+              h("button", { onClick: onClear, disabled: orderItems.length === 0, className: "text-sm text-clay disabled:opacity-30" }, "Clear")
+            ),
             h("div", { className: "rounded-lg border bg-white/80 p-5 shadow-soft" },
-              orderItems.length === 0 ? h("div", { className: "text-center text-sm p-4 opacity-50" }, "No orders queued.") : orderItems.map(dish => h("div", { key: dish.id, className: "flex items-center justify-between bg-cream p-3 rounded-lg mb-2" },
-                h("div", null, h("p", { className: "font-medium" }, dish.name), h("p", { className: "text-xs text-cedar/65" }, `${dish.count * 2} servings`)),
-                h("div", { className: "flex items-center gap-2" }, h("button", { onClick: () => onUpdate(dish.id, -1), className: "w-6 bg-white border rounded" }, "-"), h("span", { className: "w-6 text-center text-sm font-bold" }, dish.count), h("button", { onClick: () => onUpdate(dish.id, 1), className: "w-6 bg-white border rounded" }, "+"))
-              ))
+              orderItems.length === 0 ? h("div", { className: "text-center text-sm p-4 opacity-50" }, "No dishes queued inside your cart.") : h("div", null,
+                h("div", { className: "space-y-2 mb-4" },
+                  orderItems.map(dish => h("div", { key: dish.id, className: "flex items-center justify-between bg-cream p-3 rounded-lg animate-fade-in" },
+                    h("div", null, h("p", { className: "font-medium" }, dish.name), h("p", { className: "text-xs text-cedar/65" }, `${dish.count * 2} servings`)),
+                    h("div", { className: "flex items-center gap-2" }, 
+                      h("button", { onClick: () => onUpdate(dish.id, -1), className: "w-6 bg-white border rounded" }, "-"), 
+                      h("span", { className: "w-6 text-center text-sm font-bold" }, dish.count), 
+                      h("button", { onClick: () => onUpdate(dish.id, 1), className: "w-6 bg-white border rounded" }, "+")
+                    )
+                  ))
+                ),
+                h("button", { onClick: onSubmitCart, className: "w-full py-2.5 bg-clay text-white rounded-lg text-sm font-semibold hover:bg-cedar transition shadow-sm" }, "Submit")
+              )
             )
           );
         }
+
         function GroceryPanel({ requiredList, groceryList, coveredList }) {
           return h("div", { className: "wood-grain rounded-lg border p-5 shadow-soft" },
             h("div", { className: "flex justify-between items-center mb-4" }, h("h2", { className: "text-xl font-semibold" }, "Grocery List"), h("span", { className: "bg-white px-2 py-0.5 rounded text-xs font-bold" }, "To Buy")),
@@ -635,7 +712,7 @@
         function IngredientSection({ title, items }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-1.5" }, title), h("div", { className: "flex flex-wrap gap-1.5" }, items.length ? items.map(i => h("span", { key: i.name, className: "bg-white border px-2.5 py-1 rounded-full text-xs" }, `${i.name}: ${formatAmount(i.qty, i.unit)}`)) : h("span", { className: "text-xs opacity-50" }, "None"))); }
         function StepSection({ title, steps }) { return h("section", { className: "mb-4" }, h("h3", { className: "text-xs font-bold text-clay uppercase tracking-wider mb-2" }, title), h("ol", { className: "space-y-2" }, steps.map((s, idx) => h("li", { key: idx, className: "bg-white/70 border p-3 rounded-lg text-xs leading-relaxed" }, h("span", { className: "font-bold text-clay mr-2" }, String(idx+1).padStart(2, '0')), s)))); }
         function Field({ label, value, onChange, placeholder, type="text", min, max, step }) { return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("input", { type, value, placeholder, min, max, step, onChange: (e) => onChange(e.target.value), className: "w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay" })); }
-        function TextAreaField({ label, value, onChange, rows, hint }) { return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("textarea", { value, rows, onChange: (e) => onChange(e.target.value), className: "w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay" }), hint && h("span", { className: "text-[10px] opacity-60" }, hint)); }
+        function TextAreaField({ label, value, onChange, rows, hint, placeholder }) { return h("label", { className: "block text-sm font-semibold text-cedar" }, label, h("textarea", { value, rows, placeholder, onChange: (e) => onChange(e.target.value), className: "w-full mt-1 bg-white border p-2 text-sm outline-none rounded focus:border-clay" }), hint && h("span", { className: "text-[10px] opacity-60" }, hint)); }
         function Stat({ label, value }) { return h("div", { className: "min-w-20 rounded-xl bg-cream p-3 text-center" }, h("p", { className: "text-2xl font-bold" }, value), h("p", { className: "text-[10px] uppercase opacity-60 font-bold" }, label)); }
 
         ReactDOM.createRoot(document.getElementById("root")).render(h(App));
