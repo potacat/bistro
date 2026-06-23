@@ -125,7 +125,6 @@
           }
         }, [activeMatchedIngredient]);
 
-        // Defensive guard to halt native form reloads prior to authentication challenges
         const handleLocalSubmit = (e) => {
           e.preventDefault();
           onAddInventory();
@@ -159,8 +158,8 @@
                 h("button", { onClick: onCancelInlineEdit, type: "button", className: "text-xs text-cedar/65" }, "Cancel")
               ) : h("div", { className: "flex gap-3 items-center shrink-0" },
                 h("span", { className: "font-bold text-sm text-clay" }, `${item.qty} ${item.unit}`),
-                h("button", { onClick: onEditInventory, type: "button", className: "text-xs text-ink underline" }, "Edit"),
-                h("button", { onClick: onRemoveInventory, type: "button", className: "text-xs text-red-600 font-medium" }, "Remove")
+                h("button", { onClick: () => onEditInventory(item), type: "button", className: "text-xs text-ink underline" }, "Edit"),
+                h("button", { onClick: () => onRemoveInventory(item.id), type: "button", className: "text-xs text-red-600 font-medium" }, "Remove")
               )
             ))
           )
@@ -539,6 +538,30 @@
 
         const servings = orderItems.reduce((sum, item) => sum + item.count * 2, 0);
 
+        async function resolveIngredientsPayload(rows) {
+          const boundItems = [];
+          for (let row of rows) {
+            if (row.ingredient_id) {
+              boundItems.push({ ingredient_id: row.ingredient_id, qty: Number(row.qty) });
+            } else {
+              const standardizedName = titleCase(row.searchQuery.trim());
+              const exactMatch = ensureArray(masterIngredients).find(mi => mi.name.toLowerCase() === standardizedName.toLowerCase());
+              if (exactMatch) {
+                boundItems.push({ ingredient_id: exactMatch.id, qty: Number(row.qty) });
+              } else {
+                const { data: newIng, error } = await supabase.from('ingredients').insert([{
+                  name: standardizedName, unit: normalizeUnit(row.unit), calories_per_unit: 0, role: row.role || "main"
+                }]).select().single();
+                if (!error && newIng) {
+                  setMasterIngredients(prev => [...prev, newIng]);
+                  boundItems.push({ ingredient_id: newIng.id, qty: Number(row.qty) });
+                }
+              }
+            }
+          }
+          return boundItems;
+        }
+
         async function handleSaveNewRecipe() {
           const name = formName.trim(); const originalName = formOriginalName.trim();
           if (!name || formIngredients.length === 0) { setFormError("Recipe name and ingredients are required!"); return; }
@@ -562,13 +585,13 @@
           }
         }
 
-        function handleUpdateRecipeSecure(id, meta, incomingRows) {
+        async function handleUpdateRecipeSecure(id, meta, incomingRows) {
           await supabase.from('recipes').update({ name: meta.name, original_name: meta.original_name, subtitle: meta.subtitle, tags: meta.tags, preparation: meta.preparation, cooking: meta.cooking }).eq('id', id);
           await supabase.from('recipe_ingredients').delete().eq('recipe_id', id);
-          resolveIngredientsPayload(incomingRows).then(activeLinks => {
-            const junctionRows = activeLinks.map(link => ({ recipe_id: id, ingredient_id: link.ingredient_id, qty: link.qty }));
-            supabase.from('recipe_ingredients').insert(junctionRows).then(() => bootstrapCloudBistro());
-          });
+          const activeLinks = await resolveIngredientsPayload(incomingRows);
+          const junctionRows = activeLinks.map(link => ({ recipe_id: id, ingredient_id: link.ingredient_id, qty: link.qty }));
+          await supabase.from('recipe_ingredients').insert(junctionRows);
+          bootstrapCloudBistro();
           setSelectedDish(null);
         }
 
@@ -601,7 +624,7 @@
             const cleanUnit = normalizeUnit(inventoryForm.unit);
             supabase.from('ingredients').insert([{ name: inputName, unit: cleanUnit || "g", calories_per_unit: 0, role: "main" }]).select().single().then(({ data: newIng, error }) => {
               if (!error && newIng) {
-                masterIngredients.push(newIng);
+                setMasterIngredients(prev => [...prev, newIng]);
                 supabase.from('pantry_inventory').upsert({ ingredient_id: newIng.id, qty: Number(inventoryForm.qty) }, { onConflict: 'ingredient_id' }).then(() => bootstrapCloudBistro());
               }
             });
@@ -612,7 +635,6 @@
         }
 
         function handleRemoveInventorySecure(id) {
-          if (!window.confirm("Wipe inventory stock reference?")) return;
           supabase.from('pantry_inventory').delete().eq('id', id).then(() => {
             setInventory(c => ensureArray(c).filter(i => i.id !== id));
           });
@@ -623,6 +645,27 @@
           await supabase.from('pantry_inventory').update({ qty: Number(editingInventoryQty) }).eq('id', editingInventoryId);
           setInventory(c => ensureArray(c).map(i => i.id === editingInventoryId ? Object.assign({}, i, { qty: Number(editingInventoryQty) }) : i));
           setEditingInventoryId(null);
+        }
+
+        function triggerOrderSubmission(checkoutData) {
+          let bodyText = `Hi Sai,\n\nAn order has been submitted to Sai's Bistro by ${checkoutData.name}.\n`;
+          if (checkoutData.note) bodyText += `Note: "${checkoutData.note}"\n\n`;
+          bodyText += `=== ORDERED DISHES ===\n`;
+          orderItems.forEach(item => { bodyText += `- ${item.name} (${item.count * 2} servings)\n`; });
+          bodyText += `\n=== REQUIRED GROCERY LIST ===\n`;
+          if (groceryList.length === 0) bodyText += `All items are fully stocked!\n`;
+          else groceryList.forEach(item => { bodyText += `- ${item.name}: Need ${formatAmount(item.buyQty, item.unit)}\n`; });
+
+          navigator.clipboard.writeText(bodyText).then(() => {
+            setOrders([]);
+            setIsCheckoutOpen(false);
+            alert("Order copied to your clipboard! You can now paste it in a text to Sai to finalize your order! 📱🎉");
+          });
+        }
+
+        function openNewFormModal() {
+          setFormIngredients([{ key: Date.now(), searchQuery: '', ingredient_id: null, qty: '', unit: 'g', role: 'main', showSuggestions: false }]);
+          setIsFormOpen(true);
         }
 
         return h("main", { className: "mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-5 py-6 sm:px-8 lg:px-10" },
@@ -648,11 +691,11 @@
               ),
               viewMode === "menu" ? h("div", { className: "grid gap-4 sm:grid-cols-2" },
                 ensureArray(visibleDishes).map(dish => h(DishCard, { key: dish.id, dish, onAdd: () => setOrders(c => c.find(o => o.id === dish.id) ? c.map(o => o.id === dish.id ? { id: o.id, count: o.count + 1 } : o) : c.concat({ id: dish.id, count: 1 })), onOpen: () => setSelectedDish(dish), onLogClick: () => executeSecureAction(() => setLoggingDish(dish)) }))
-              ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: () => executeSecureAction(handleAddInventorySecure), onRemoveInventory: (id) => executeSecureAction(() => handleRemoveInventorySecure(id)), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
+              ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: () => executeSecureAction(handleAddInventorySecure), onRemoveInventory: (id) => executeSecureAction(() => { if(window.confirm("Wipe inventory stock reference?")) handleRemoveInventorySecure(id); }), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
             ),
             h(Sidebar, { viewMode, orderItems, requiredList, groceryList, coveredList, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => ensureArray(c).map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true) })
           ),
-          selectedDish && h(RecipeModal, { dish: selectedDish, historyLogs: ensureArray(cookingHistory).filter(l => Number(l.recipe_id) === selectedDish.id), masterIngredients, executeSecureAction, onClose: () => setSelectedDish(null), onDelete: handleDeleteRecipeSecure, onUpdate: handleUpdateRecipeSecure, onLogClick: () => setLoggingDish(selectedDish), onDeleteLog: handleDeleteLogSecure }),
+          selectedDish && h(RecipeModal, { dish: selectedDish, historyLogs: ensureArray(cookingHistory).filter(l => Number(l.recipe_id) === selectedDish.id), masterIngredients, executeSecureAction, onClose: () => setSelectedDish(null), onDelete: handleDeleteRecipeSecure, onUpdate: handleUpdateRecipeSecure, onLogClick: () => executeSecureAction(() => { setLoggingDish(selectedDish); setSelectedDish(null); }), onDeleteLog: handleDeleteLogSecure }),
           loggingDish && h(LogCookingModal, { dish: loggingDish, onClose: () => setLoggingDish(null), onSaveLog: handleAddLogSecure }),
           isFormOpen && h(AddDishModal, { formName, setFormName, formOriginalName, setFormOriginalName, formTags, setFormTags, formPrep, setFormPrep, formCook, setFormCook, formIngredients, setFormIngredients, masterIngredients, formError, onClose: () => setIsFormOpen(false), onSubmit: handleSaveNewRecipe }),
           isCheckoutOpen && h(CheckoutModal, { onClose: () => setIsCheckoutOpen(false), onConfirm: triggerOrderSubmission }),
