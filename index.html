@@ -104,7 +104,8 @@
           h("select", { value: row.role, disabled: !!row.ingredient_id, onChange: (e) => onChange(Object.assign({}, row, { role: e.target.value })), className: "w-full bg-cream p-2 text-xs outline-none rounded" },
             h("option", { value: "main" }, "Main"), h("option", { value: "pantry" }, "Pantry")
           ),
-          h("button", { type: "button", onClick: onRemove, className: "text-red-600 font-bold px-2 text-sm" }, "×")
+          // 🛡️ Added confirmation dialogue before stripping a custom ingredient row
+          h("button", { type: "button", onClick: () => { if (window.confirm("Remove this ingredient line?")) onRemove(); }, className: "text-red-600 font-bold px-2 text-sm" }, "×")
         );
       }
 
@@ -342,10 +343,15 @@
         );
       }
 
-      function Sidebar({ viewMode, orderItems, requiredList, groceryList, coveredList, onClear, onUpdate, onSubmitCart }) {
+      function Sidebar({ viewMode, orderItems, requiredList, groceryList, coveredList, onClear, onUpdate, onSubmitCart, session, onSignOut }) {
         return h("aside", { className: "space-y-4" }, 
           h(CookList, { orderItems, onClear, onUpdate, onSubmitCart }),
-          viewMode === "menu" && h(GroceryPanel, { requiredList, groceryList, coveredList }) 
+          viewMode === "menu" && h(GroceryPanel, { requiredList, groceryList, coveredList }),
+          h("div", { className: "pt-4" },
+            session 
+              ? h("button", { onClick: onSignOut, className: "w-full py-2 bg-oat text-cedar text-xs font-bold rounded-lg hover:bg-clay hover:text-white transition shadow-sm" }, "🔓 Session Unlocked (Lock)")
+              : h("div", { className: "w-full py-2 bg-cream text-cedar/50 text-xs font-bold rounded-lg text-center border border-cedar/10" }, "🔒 Public View Mode")
+          )
         );
       }
 
@@ -456,6 +462,11 @@
             setIsDataLoading(false);
           }
         }
+
+        const handleSignOut = async () => {
+          await supabase.auth.signOut();
+          setSession(null);
+        };
 
         function executeSecureAction(actionCallback) {
           if (session) {
@@ -596,6 +607,7 @@
         }
 
         function handleDeleteRecipeSecure(id) {
+          if (!window.confirm("Are you sure you want to permanently wipe this recipe? 🗑️")) return;
           supabase.from('recipes').delete().eq('id', id).then(() => {
             setRecipes(curr => curr.filter(r => r.id !== id));
             setSelectedDish(null);
@@ -609,6 +621,7 @@
         }
 
         function handleDeleteLogSecure(logId) {
+          if (!window.confirm("Are you sure you want to delete this timeline history log? 🗑️")) return;
           supabase.from('cooking_history').delete().eq('id', logId).then(() => {
             setCookingHistory(curr => ensureArray(curr).filter(l => l.id !== logId));
           });
@@ -635,6 +648,7 @@
         }
 
         function handleRemoveInventorySecure(id) {
+          if (!window.confirm("Wipe inventory stock reference?")) return;
           supabase.from('pantry_inventory').delete().eq('id', id).then(() => {
             setInventory(c => ensureArray(c).filter(i => i.id !== id));
           });
@@ -691,9 +705,9 @@
               ),
               viewMode === "menu" ? h("div", { className: "grid gap-4 sm:grid-cols-2" },
                 ensureArray(visibleDishes).map(dish => h(DishCard, { key: dish.id, dish, onAdd: () => setOrders(c => c.find(o => o.id === dish.id) ? c.map(o => o.id === dish.id ? { id: o.id, count: o.count + 1 } : o) : c.concat({ id: dish.id, count: 1 })), onOpen: () => setSelectedDish(dish), onLogClick: () => executeSecureAction(() => setLoggingDish(dish)) }))
-              ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: () => executeSecureAction(handleAddInventorySecure), onRemoveInventory: (id) => executeSecureAction(() => { if(window.confirm("Wipe inventory stock reference?")) handleRemoveInventorySecure(id); }), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
+              ) : h(MainPaneInventoryModule, { inventory, inventoryForm, setInventoryForm, masterIngredients, editingInventoryId, editingInventoryQty, setEditingInventoryIdQty, onAddInventory: () => executeSecureAction(handleAddInventorySecure), onRemoveInventory: (id) => executeSecureAction(() => handleRemoveInventorySecure(id)), onEditInventory: (item) => executeSecureAction(() => { setEditingInventoryId(item.id); setEditingInventoryIdQty(String(item.qty)); }), onCommitInlineEdit: () => executeSecureAction(commitInlineInventoryEdit), onCancelInlineEdit: () => setEditingInventoryId(null) })
             ),
-            h(Sidebar, { viewMode, orderItems, requiredList, groceryList, coveredList, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => ensureArray(c).map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true) })
+            h(Sidebar, { viewMode, orderItems, requiredList, groceryList, coveredList, onClear: () => setOrders([]), onUpdate: (id, delta) => setOrders(c => ensureArray(c).map(o => o.id === id ? { id: o.id, count: Math.max(0, o.count + delta) } : o).filter(o => o.count > 0)), onSubmitCart: () => setIsCheckoutOpen(true), session, onSignOut: handleSignOut })
           ),
           selectedDish && h(RecipeModal, { dish: selectedDish, historyLogs: ensureArray(cookingHistory).filter(l => Number(l.recipe_id) === selectedDish.id), masterIngredients, executeSecureAction, onClose: () => setSelectedDish(null), onDelete: handleDeleteRecipeSecure, onUpdate: handleUpdateRecipeSecure, onLogClick: () => executeSecureAction(() => { setLoggingDish(selectedDish); setSelectedDish(null); }), onDeleteLog: handleDeleteLogSecure }),
           loggingDish && h(LogCookingModal, { dish: loggingDish, onClose: () => setLoggingDish(null), onSaveLog: handleAddLogSecure }),
